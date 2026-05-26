@@ -74,10 +74,35 @@ export default function LoginPage(){
         />
 
         <button
-          className="bg-blue-600 text-white w-full p-3 rounded"
-        >
-          Login
-        </button>
+  className="bg-blue-600 text-white w-full p-3 rounded"
+>
+  Login
+</button>
+
+{/* REGISTER */}
+
+<div className="text-center mt-5">
+
+  <p className="text-gray-600">
+
+    Belum punya akun?
+
+  </p>
+
+  <a
+    href="/register"
+    className="
+      text-blue-600
+      font-semibold
+      hover:underline
+    "
+  >
+
+    Daftar Sekarang
+
+  </a>
+
+</div>
 
       </form>
 

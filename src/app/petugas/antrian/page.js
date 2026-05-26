@@ -8,119 +8,168 @@ import DashboardLayout from "../../../components/layouts/DashboardLayout"
 
 import AuthGuard from "../../../components/guards/AuthGuard"
 
-export default function PetugasAntrianPage() {
+export default function PetugasAntrianPage(){
 
-  const [antrians, setAntrians] = useState([])
+  // =========================
+  // STATE
+  // =========================
+  const [userData, setUserData]
+    = useState(null)
 
-  useEffect(() => {
+  const [antrians, setAntrians]
+    = useState([])
 
-    getAntrians()
+  // =========================
+  // GET USER LOGIN
+  // =========================
+  useEffect(()=>{
 
-    const interval = setInterval(() => {
+    getUser()
 
-      getAntrians()
+  },[])
 
-    }, 3000)
+  async function getUser(){
 
-    return () => clearInterval(interval)
+    const {
+      data:{session}
+    } = await supabase.auth.getSession()
 
-  }, [])
-
-  async function getAntrians() {
+    if(!session) return
 
     const { data } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", session.user.id)
+      .single()
+
+    console.log("USER LOGIN:", data)
+
+    setUserData(data)
+  }
+
+  // =========================
+  // GET ANTRIANS
+  // =========================
+  useEffect(()=>{
+
+    if(userData){
+
+      getAntrians()
+    }
+
+  },[userData])
+
+  async function getAntrians(){
+
+    if(!userData?.loket) return
+
+    console.log(
+      "LOKET PETUGAS:",
+      userData.loket
+    )
+
+    const { data, error } =
+      await supabase
       .from("antrians")
       .select(`
         *,
-        layanans (
-          nama_layanan
-        )
+        layanans(*)
       `)
-      .order("created_at", { ascending: true })
+      .eq("loket", userData.loket)
+      .order("created_at", {
+        ascending:true
+      })
+
+    console.log("ANTRIANS:", data)
+    console.log("ERROR:", error)
 
     setAntrians(data || [])
   }
 
-  async function updateStatus(id, status, nomor) {
+  // =========================
+  // REALTIME
+  // =========================
+  useEffect(()=>{
 
-    const { error } = await supabase
-      .from("antrians")
-      .update({
-        status: status
-      })
-      .eq("id", id)
+    const channel = supabase
+      .channel("antrian-realtime")
 
-    if (error) {
+      .on(
+        "postgres_changes",
+        {
+          event:"*",
+          schema:"public",
+          table:"antrians"
+        },
+        ()=>{
 
-      alert(error.message)
-      return
+          getAntrians()
+        }
+      )
+      .subscribe()
+
+    return ()=>{
+
+      supabase.removeChannel(channel)
     }
 
-    // text to speech
-    if (status === "dipanggil") {
+  },[userData])
 
-      const suara = new SpeechSynthesisUtterance(
-        `Nomor antrian ${nomor} dipersilahkan menuju loket pelayanan`
+  // =========================
+  // PANGGIL
+  // =========================
+  async function panggilAntrian(item){
+
+    await supabase
+      .from("antrians")
+      .update({
+        status:"dipanggil"
+      })
+      .eq("id", item.id)
+
+    const suara =
+      new SpeechSynthesisUtterance(
+
+        `Nomor antrian
+        ${item.nomor_antrian}
+        silahkan menuju
+        ${item.loket}`
+
       )
 
-      suara.lang = "id-ID"
-
-      window.speechSynthesis.speak(suara)
-    }
-
-    getAntrians()
+    speechSynthesis.speak(suara)
   }
 
-  async function resetStatus(id) {
+  // =========================
+  // TERIMA
+  // =========================
+  async function terimaAntrian(id){
 
     await supabase
       .from("antrians")
       .update({
-        status: "menunggu"
+        status:"diterima"
       })
       .eq("id", id)
-
-    getAntrians()
   }
 
-  async function hapusAntrian(id) {
-
-    const konfirmasi = confirm(
-      "Yakin ingin menghapus antrian?"
-    )
-
-    if (!konfirmasi) return
+  // =========================
+  // TOLAK
+  // =========================
+  async function tolakAntrian(id){
 
     await supabase
       .from("antrians")
-      .delete()
+      .update({
+        status:"ditolak"
+      })
       .eq("id", id)
-
-    getAntrians()
   }
 
-  function getBadge(status){
-
-    if(status === "menunggu"){
-      return "bg-yellow-500"
-    }
-
-    if(status === "dipanggil"){
-      return "bg-blue-500"
-    }
-
-    if(status === "diterima"){
-      return "bg-green-500"
-    }
-
-    if(status === "ditolak"){
-      return "bg-red-500"
-    }
-
-    return "bg-gray-500"
-  }
-
-  return (
+  // =========================
+  // UI
+  // =========================
+  return(
 
     <AuthGuard allowedRole="petugas">
 
@@ -129,7 +178,9 @@ export default function PetugasAntrianPage() {
         <div className="bg-white p-5 rounded-lg shadow">
 
           <h1 className="text-2xl font-bold mb-5">
-            Antrian Masuk
+
+            Data Antrian {userData?.loket}
+
           </h1>
 
           <div className="overflow-x-auto">
@@ -171,7 +222,7 @@ export default function PetugasAntrianPage() {
 
                     <tr key={item.id}>
 
-                      <td className="border p-3 font-bold">
+                      <td className="border p-3">
 
                         {item.nomor_antrian}
 
@@ -185,76 +236,69 @@ export default function PetugasAntrianPage() {
 
                       <td className="border p-3">
 
-                        {item.layanans?.nama_layanan}
+                        {
+                          item.layanans
+                          ?.nama_layanan
+                        }
 
                       </td>
 
                       <td className="border p-3">
 
-                        <span
-                          className={`
-                            ${getBadge(item.status)}
-                            text-white
-                            px-3
-                            py-1
-                            rounded-full
-                            text-sm
-                          `}
-                        >
-
-                          {item.status}
-
-                        </span>
+                        {item.status}
 
                       </td>
 
                       <td className="border p-3">
 
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex gap-2">
 
                           <button
-                            onClick={()=>updateStatus(
-                              item.id,
-                              "dipanggil",
-                              item.nomor_antrian
-                            )}
-                            className="bg-blue-500 text-white px-3 py-1 rounded"
+                            onClick={()=>
+                              panggilAntrian(item)
+                            }
+                            className="
+                              bg-blue-600
+                              text-white
+                              px-3 py-1
+                              rounded
+                            "
                           >
+
                             Panggil
+
                           </button>
 
                           <button
-                            onClick={()=>updateStatus(
-                              item.id,
-                              "diterima"
-                            )}
-                            className="bg-green-500 text-white px-3 py-1 rounded"
+                            onClick={()=>
+                              terimaAntrian(item.id)
+                            }
+                            className="
+                              bg-green-600
+                              text-white
+                              px-3 py-1
+                              rounded
+                            "
                           >
+
                             Terima
+
                           </button>
 
                           <button
-                            onClick={()=>updateStatus(
-                              item.id,
-                              "ditolak"
-                            )}
-                            className="bg-red-500 text-white px-3 py-1 rounded"
+                            onClick={()=>
+                              tolakAntrian(item.id)
+                            }
+                            className="
+                              bg-red-600
+                              text-white
+                              px-3 py-1
+                              rounded
+                            "
                           >
+
                             Tolak
-                          </button>
 
-                          <button
-                            onClick={()=>resetStatus(item.id)}
-                            className="bg-yellow-500 text-white px-3 py-1 rounded"
-                          >
-                            Reset
-                          </button>
-
-                          <button
-                            onClick={()=>hapusAntrian(item.id)}
-                            className="bg-gray-700 text-white px-3 py-1 rounded"
-                          >
-                            Hapus
                           </button>
 
                         </div>
@@ -262,6 +306,7 @@ export default function PetugasAntrianPage() {
                       </td>
 
                     </tr>
+
                   ))
                 }
 

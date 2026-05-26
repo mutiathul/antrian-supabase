@@ -98,11 +98,35 @@ export default function RegisterPage() {
         />
 
         <button
-          type="submit"
-          className="bg-blue-600 hover:bg-blue-700 text-white w-full p-3 rounded"
-        >
-          Register
-        </button>
+  className="bg-blue-600 text-white w-full p-3 rounded"
+>
+  Daftar
+</button>
+
+{/* REGISTER */}
+
+<div className="text-center mt-5">
+
+  <p className="text-gray-600">
+
+    Sudah punya akun?
+
+  </p>
+
+  <a
+    href="/login"
+    className="
+      text-blue-600
+      font-semibold
+      hover:underline
+    "
+  >
+
+    Login Sekarang
+
+  </a>
+
+</div>
 
       </form>
 

@@ -1,128 +1,352 @@
 "use client"
 
 import { useEffect, useState } from "react"
+
+import { useRouter } from "next/navigation"
+
 import { supabase } from "../../../../lib/supabaseClient"
+
 import DashboardLayout from "../../../components/layouts/DashboardLayout"
+
 import AuthGuard from "../../../components/guards/AuthGuard"
 
 export default function AmbilAntrianPage() {
 
   const [layanans, setLayanans] = useState([])
+
   const [userData, setUserData] = useState(null)
+
   const [layananId, setLayananId] = useState("")
-  //const [nama, setNama] = useState("")
+
   const [jk, setJk] = useState("")
+
   const [hp, setHp] = useState("")
+
   const [alamat, setAlamat] = useState("")
 
+  const [loading, setLoading] = useState(false)
+
+  const router = useRouter()
+
+  // =========================
+  // GET DATA AWAL
+  // =========================
   useEffect(() => {
 
-     getLayanans()
-  getUser()
+    getLayanans()
+
+    getUser()
 
   }, [])
-async function getUser() {
 
-  const {
-    data: { session }
-  } = await supabase.auth.getSession()
+  // =========================
+  // GET USER
+  // =========================
+  async function getUser() {
 
-  if (!session) return
+    const {
+      data: { session }
+    } = await supabase.auth.getSession()
 
-  const { data } = await supabase
-    .from("users")
-    .select("*")
-    .eq("id", session.user.id)
-    .single()
+    if (!session) return
 
-  setUserData(data)
-}
+    const { data } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", session.user.id)
+      .single()
+
+    setUserData(data)
+  }
+
+  // =========================
+  // GET LAYANAN
+  // =========================
   async function getLayanans() {
 
     const { data } = await supabase
       .from("layanans")
       .select("*")
+      .order("nama_layanan")
 
     setLayanans(data || [])
   }
 
-  async function handleSubmit(e) {
+  // =========================
+  // GENERATE NOMOR ANTRIAN
+  // =========================
+  async function generateNomorAntrian(
+    loket,
+    kode
+  ){
+
+    const today = new Date()
+      .toISOString()
+      .split("T")[0]
+
+    const { data } = await supabase
+      .from("antrians")
+      .select("*")
+      .eq("loket", loket)
+      .eq("tanggal_antrian", today)
+
+    const nomorUrut = String(
+      (data?.length || 0) + 1
+    ).padStart(3, "0")
+
+    return `${kode}-${nomorUrut}`
+  }
+
+  // =========================
+  // SUBMIT
+  // =========================
+  async function handleSubmit(e){
 
     e.preventDefault()
 
-    // ambil session login
+    setLoading(true)
+
     const {
-      data: { session }
+      data:{session}
     } = await supabase.auth.getSession()
 
-    const user = session.user
+    if(!session){
 
-    // cek antrian aktif
-    const { data: existing } = await supabase
-      .from("antrians")
-      .select("*")
-      .eq("user_id", user.id)
-      .in("status", ["menunggu", "dipanggil"])
-
-    if (existing.length > 0) {
-
-      alert("Masih ada antrian aktif")
+      alert("Session login tidak ditemukan")
       return
     }
 
-    // ambil layanan
-    const { data: layanan } = await supabase
+    const user = session.user
+
+    // =========================
+    // CEK ANTRIAN AKTIF
+    // =========================
+    const { data: existing } =
+      await supabase
+      .from("antrians")
+      .select("*")
+      .eq("user_id", user.id)
+      .in("status", [
+        "menunggu",
+        "dipanggil",
+        "pending",
+        "verifikasi"
+      ])
+
+    if(existing?.length > 0){
+
+      alert(
+        "Masih ada antrian aktif"
+      )
+
+      setLoading(false)
+
+      return
+    }
+
+    // =========================
+    // AMBIL DATA LAYANAN
+    // =========================
+    const { data: layanan } =
+      await supabase
       .from("layanans")
       .select("*")
       .eq("id", layananId)
       .single()
 
-    // hitung jumlah antrian hari ini
-    const today = new Date().toISOString().split("T")[0]
+    if(!layanan){
 
-    const { data: totalToday } = await supabase
-      .from("antrians")
-      .select("*")
-      .eq("layanan_id", layananId)
-      .eq("tanggal_antrian", today)
+      alert("Layanan tidak ditemukan")
 
-    const nomorUrut = String(
-      (totalToday?.length || 0) + 1
-    ).padStart(3, "0")
+      setLoading(false)
 
-    const nomorAntrian =
-      `${layanan.kode_layanan}-${nomorUrut}`
-
-    // simpan antrian
-    const { error } = await supabase
-      .from("antrians")
-      .insert([
-        {
-          user_id: user.id,
-          layanan_id: layananId,
-          nomor_antrian: nomorAntrian,
-          nama_pemohon: userData.nama_lengkap,
-          jenis_kelamin: jk,
-          nomor_hp: hp,
-          alamat: alamat,
-          status: "menunggu"
-        }
-      ])
-
-    if (error) {
-
-      alert(error.message)
       return
     }
 
-    alert(`Nomor antrian berhasil dibuat: ${nomorAntrian}`)
+    // =========================
+    // VARIABLE
+    // =========================
+    let loket = ""
 
-    // reset form
+    let perluVerifikasi = false
+
+    let nomorAntrian = null
+
+    let status = "menunggu"
+
+    let statusDokumen = null
+
+    // =========================
+    // IKD
+    // =========================
+    if(
+      layanan.nama_layanan
+      === "IKD"
+    ){
+
+      loket = "Loket 1"
+
+      nomorAntrian =
+        await generateNomorAntrian(
+          loket,
+          "IK"
+        )
+    }
+
+    // =========================
+    // CETAK KTP & KIA
+    // =========================
+    else if(
+
+      layanan.nama_layanan
+      === "Cetak KTP"
+
+      ||
+
+      layanan.nama_layanan
+      === "KIA"
+
+    ){
+
+      loket = "Loket 2"
+
+      nomorAntrian =
+        await generateNomorAntrian(
+          loket,
+          "KT"
+        )
+    }
+
+    // =========================
+    // E-OFFICE
+    // =========================
+    else if(
+      layanan.nama_layanan
+      === "E-Office"
+    ){
+
+      loket = "Loket 4"
+
+      nomorAntrian =
+        await generateNomorAntrian(
+          loket,
+          "EO"
+        )
+    }
+
+    // =========================
+    // PEREKAMAN
+    // =========================
+    else if(
+      layanan.nama_layanan
+      === "Perekaman"
+    ){
+
+      loket = "Loket 9"
+
+      nomorAntrian =
+        await generateNomorAntrian(
+          loket,
+          "PR"
+        )
+    }
+
+    // =========================
+    // LAYANAN FO
+    // =========================
+    else{
+
+      perluVerifikasi = true
+
+      loket = "FO"
+
+      status = "verifikasi"
+
+      statusDokumen = "pending"
+    }
+
+    // =========================
+    // SIMPAN DATABASE
+    // =========================
+    const { error } =
+      await supabase
+      .from("antrians")
+      .insert([{
+
+        user_id:user.id,
+
+        layanan_id:layananId,
+
+        nomor_antrian:
+          nomorAntrian,
+
+        nama_pemohon:
+          userData.nama_lengkap,
+
+        jenis_kelamin:jk,
+
+        nomor_hp:hp,
+
+        alamat:alamat,
+
+        status:status,
+
+        perlu_verifikasi:
+          perluVerifikasi,
+
+        status_dokumen:
+          statusDokumen,
+
+        loket:loket
+
+      }])
+
+    if(error){
+
+      alert(error.message)
+
+      setLoading(false)
+
+      return
+    }
+
+    // =========================
+    // NOTIFIKASI
+    // =========================
+    if(perluVerifikasi){
+
+      alert(
+        "Silahkan menuju Front Office untuk pengecekan dokumen"
+      )
+
+    }else{
+
+      alert(
+`Nomor antrian berhasil dibuat:
+
+${nomorAntrian}
+
+Silahkan menuju ${loket}`
+      )
+    }
+
+    // =========================
+    // RESET FORM
+    // =========================
     setLayananId("")
-    //setNama("")
+
     setJk("")
+
     setHp("")
+
     setAlamat("")
+
+    setLoading(false)
+
+    // =========================
+    // REDIRECT DASHBOARD
+    // =========================
+    router.push("/user/dashboard")
   }
 
   return (
@@ -131,10 +355,27 @@ async function getUser() {
 
       <DashboardLayout role="masyarakat">
 
-        <div className="bg-white p-6 rounded-lg shadow">
+        <div
+          className="
+            bg-white
+            p-6
+            rounded-2xl
+            shadow
+            max-w-3xl
+          "
+        >
 
-          <h1 className="text-2xl font-bold mb-5">
+          <h1
+            className="
+              text-2xl
+              md:text-3xl
+              font-bold
+              mb-6
+            "
+          >
+
             Ambil Antrian
+
           </h1>
 
           <form
@@ -142,77 +383,199 @@ async function getUser() {
             className="space-y-4"
           >
 
-            <select
-              className="w-full border p-3 rounded"
-              value={layananId}
-              onChange={(e)=>setLayananId(e.target.value)}
-              required
-            >
+            {/* LAYANAN */}
 
-              <option value="">
-                Pilih Layanan
-              </option>
+            <div>
 
-              {
-                layanans.map((item)=>(
-                  <option
-                    key={item.id}
-                    value={item.id}
-                  >
-                    {item.nama_layanan}
-                  </option>
-                ))
-              }
+              <label className="block mb-2 font-medium">
 
-            </select>
+                Jenis Layanan
 
-           <input
-  type="text"
-  className="w-full border p-3 rounded bg-gray-100"
-  value={userData?.nama_lengkap || ""}
-  readOnly
-/>
+              </label>
 
-            <select
-              className="w-full border p-3 rounded"
-              value={jk}
-              onChange={(e)=>setJk(e.target.value)}
-              required
-            >
-              <option value="">
+              <select
+                className="
+                  w-full
+                  border
+                  p-3
+                  rounded-lg
+                "
+                value={layananId}
+                onChange={(e)=>
+                  setLayananId(e.target.value)
+                }
+                required
+              >
+
+                <option value="">
+                  Pilih Layanan
+                </option>
+
+                {
+                  layanans.map((item)=>(
+
+                    <option
+                      key={item.id}
+                      value={item.id}
+                    >
+
+                      {item.nama_layanan}
+
+                    </option>
+
+                  ))
+                }
+
+              </select>
+
+            </div>
+
+            {/* NAMA */}
+
+            <div>
+
+              <label className="block mb-2 font-medium">
+
+                Nama Pemohon
+
+              </label>
+
+              <input
+                type="text"
+                className="
+                  w-full
+                  border
+                  p-3
+                  rounded-lg
+                  bg-gray-100
+                "
+                value={
+                  userData?.nama_lengkap || ""
+                }
+                readOnly
+              />
+
+            </div>
+
+            {/* JK */}
+
+            <div>
+
+              <label className="block mb-2 font-medium">
+
                 Jenis Kelamin
-              </option>
 
-              <option value="Laki-laki">
-                Laki-laki
-              </option>
+              </label>
 
-              <option value="Perempuan">
-                Perempuan
-              </option>
-            </select>
+              <select
+                className="
+                  w-full
+                  border
+                  p-3
+                  rounded-lg
+                "
+                value={jk}
+                onChange={(e)=>
+                  setJk(e.target.value)
+                }
+                required
+              >
 
-            <input
-              type="text"
-              placeholder="Nomor HP"
-              className="w-full border p-3 rounded"
-              value={hp}
-              onChange={(e)=>setHp(e.target.value)}
-              required
-            />
+                <option value="">
+                  Pilih Jenis Kelamin
+                </option>
 
-            <textarea
-              placeholder="Alamat"
-              className="w-full border p-3 rounded"
-              value={alamat}
-              onChange={(e)=>setAlamat(e.target.value)}
-              required
-            />
+                <option value="Laki-laki">
+                  Laki-laki
+                </option>
+
+                <option value="Perempuan">
+                  Perempuan
+                </option>
+
+              </select>
+
+            </div>
+
+            {/* HP */}
+
+            <div>
+
+              <label className="block mb-2 font-medium">
+
+                Nomor HP
+
+              </label>
+
+              <input
+                type="text"
+                placeholder="08xxxxxxxxxx"
+                className="
+                  w-full
+                  border
+                  p-3
+                  rounded-lg
+                "
+                value={hp}
+                onChange={(e)=>
+                  setHp(e.target.value)
+                }
+                required
+              />
+
+            </div>
+
+            {/* ALAMAT */}
+
+            <div>
+
+              <label className="block mb-2 font-medium">
+
+                Alamat
+
+              </label>
+
+              <textarea
+                placeholder="Masukkan alamat lengkap"
+                className="
+                  w-full
+                  border
+                  p-3
+                  rounded-lg
+                "
+                rows="4"
+                value={alamat}
+                onChange={(e)=>
+                  setAlamat(e.target.value)
+                }
+                required
+              />
+
+            </div>
+
+            {/* BUTTON */}
 
             <button
-              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded"
+              disabled={loading}
+              className="
+                w-full
+                bg-blue-600
+                hover:bg-blue-700
+                text-white
+                p-3
+                rounded-lg
+                font-semibold
+                transition
+                disabled:bg-gray-400
+              "
             >
-              Ambil Antrian
+
+              {
+                loading
+                  ? "Memproses..."
+                  : "Ambil Antrian"
+              }
+
             </button>
 
           </form>
