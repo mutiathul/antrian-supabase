@@ -51,9 +51,13 @@ export default function AmbilAntrianPage() {
     if (!session) return
 
     const { data } = await supabase
+
       .from("users")
+
       .select("*")
+
       .eq("id", session.user.id)
+
       .single()
 
     setUserData(data)
@@ -65,8 +69,11 @@ export default function AmbilAntrianPage() {
   async function getLayanans() {
 
     const { data } = await supabase
+
       .from("layanans")
+
       .select("*")
+
       .order("nama_layanan")
 
     setLayanans(data || [])
@@ -75,27 +82,42 @@ export default function AmbilAntrianPage() {
   // =========================
   // GENERATE NOMOR ANTRIAN
   // =========================
-  async function generateNomorAntrian(
-    loket,
-    kode
-  ){
+ async function generateNomorAntrian(
+  kode
+){
 
-    const today = new Date()
-      .toISOString()
-      .split("T")[0]
+  const today =
+    new Date()
+    .toISOString()
+    .split("T")[0]
 
-    const { data } = await supabase
-      .from("antrians")
-      .select("*")
-      .eq("loket", loket)
-      .eq("tanggal_antrian", today)
+  // =========================
+  // HITUNG BERDASARKAN KODE
+  // =========================
+  const { data } = await supabase
 
-    const nomorUrut = String(
-      (data?.length || 0) + 1
-    ).padStart(3, "0")
+    .from("antrians")
 
-    return `${kode}-${nomorUrut}`
-  }
+    .select("id")
+
+    .like(
+      "nomor_antrian",
+      `${kode}-%`
+    )
+
+    .eq(
+      "tanggal_antrian",
+      today
+    )
+
+  const nomorUrut = String(
+
+    (data?.length || 0) + 1
+
+  ).padStart(3,"0")
+
+  return `${kode}-${nomorUrut}`
+}
 
   // =========================
   // SUBMIT
@@ -104,249 +126,293 @@ export default function AmbilAntrianPage() {
 
     e.preventDefault()
 
+    if(loading) return
+
     setLoading(true)
 
-    const {
-      data:{session}
-    } = await supabase.auth.getSession()
+    try{
 
-    if(!session){
+      const {
+        data:{session}
+      } = await supabase.auth.getSession()
 
-      alert("Session login tidak ditemukan")
-      return
-    }
+      if(!session){
 
-    const user = session.user
+        alert("Session login tidak ditemukan")
 
-    // =========================
-    // CEK ANTRIAN AKTIF
-    // =========================
-    const { data: existing } =
-      await supabase
-      .from("antrians")
-      .select("*")
-      .eq("user_id", user.id)
-      .in("status", [
-        "menunggu",
-        "dipanggil",
-        "pending",
-        "verifikasi"
-      ])
+        setLoading(false)
 
-    if(existing?.length > 0){
+        return
+      }
 
-      alert(
-        "Masih ada antrian aktif"
-      )
+      const user = session.user
 
-      setLoading(false)
+      // =========================
+      // CEK ANTRIAN AKTIF
+      // =========================
+      const { data: existing } =
+        await supabase
 
-      return
-    }
+        .from("antrians")
 
-    // =========================
-    // AMBIL DATA LAYANAN
-    // =========================
-    const { data: layanan } =
-      await supabase
-      .from("layanans")
-      .select("*")
-      .eq("id", layananId)
-      .single()
+        .select("*")
 
-    if(!layanan){
+        .eq("user_id", user.id)
 
-      alert("Layanan tidak ditemukan")
+        .in("status", [
 
-      setLoading(false)
+          "menunggu",
 
-      return
-    }
+          "dipanggil",
 
-    // =========================
-    // VARIABLE
-    // =========================
-    let loket = ""
+          "verifikasi"
 
-    let perluVerifikasi = false
+        ])
 
-    let nomorAntrian = null
+      if(existing?.length > 0){
 
-    let status = "menunggu"
-
-    let statusDokumen = null
-
-    // =========================
-    // IKD
-    // =========================
-    if(
-      layanan.nama_layanan
-      === "IKD"
-    ){
-
-      loket = "Loket 1"
-
-      nomorAntrian =
-        await generateNomorAntrian(
-          loket,
-          "IK"
+        alert(
+          "Masih ada antrian aktif"
         )
-    }
 
-    // =========================
-    // CETAK KTP & KIA
-    // =========================
-    else if(
+        setLoading(false)
 
-      layanan.nama_layanan
-      === "Cetak KTP"
+        return
+      }
 
-      ||
+      // =========================
+      // AMBIL DATA LAYANAN
+      // =========================
+      const { data: layanan } =
+        await supabase
 
-      layanan.nama_layanan
-      === "KIA"
+        .from("layanans")
 
-    ){
+        .select("*")
 
-      loket = "Loket 2"
+        .eq("id", layananId)
 
-      nomorAntrian =
-        await generateNomorAntrian(
-          loket,
-          "KT"
+        .single()
+
+      if(!layanan){
+
+        alert("Layanan tidak ditemukan")
+
+        setLoading(false)
+
+        return
+      }
+
+      // =========================
+      // VARIABLE
+      // =========================
+      let loket = ""
+
+      let perluVerifikasi = false
+
+      let nomorAntrian = null
+
+      let status = "menunggu"
+
+      let statusDokumen = null
+
+      let kodeAntrian = ""
+
+     // =========================
+// IKD
+// =========================
+if(
+  layanan.nama_layanan
+  === "IKD"
+){
+
+  loket = "Loket 1"
+
+  kodeAntrian = "IK"
+}
+
+// =========================
+// CETAK KTP
+// =========================
+else if(
+  layanan.nama_layanan
+  === "Cetak KTP"
+){
+
+  loket = "Loket 2"
+
+  kodeAntrian = "CT"
+}
+
+// =========================
+// KIA
+// =========================
+else if(
+  layanan.nama_layanan
+  === "KIA"
+){
+
+  loket = "Loket 2"
+
+  kodeAntrian = "KI"
+}
+
+// =========================
+// E-OFFICE
+// =========================
+else if(
+  layanan.nama_layanan
+  === "E-Office"
+){
+
+  loket = "Loket 4"
+
+  kodeAntrian = "EO"
+}
+
+// =========================
+// PEREKAMAN KTP
+// =========================
+else if(
+  layanan.nama_layanan
+  === "Perekaman KTP"
+){
+
+  loket = "Loket 9"
+
+  kodeAntrian = "PR"
+}
+
+// =========================
+// LAYANAN FO
+// =========================
+else{
+
+  perluVerifikasi = true
+
+  loket = "FO"
+
+  status = "verifikasi"
+
+  statusDokumen = "pending"
+}
+      // =========================
+      // GENERATE NOMOR
+      // =========================
+      if(!perluVerifikasi){
+
+        nomorAntrian =
+          await generateNomorAntrian(
+            kodeAntrian
+          )
+      }
+
+      // =========================
+      // EXPIRED 30 MENIT
+      // =========================
+      const expiredAt =
+        new Date(
+          Date.now() + 30 * 60 * 1000
+        ).toISOString()
+
+      // =========================
+      // SIMPAN DATABASE
+      // =========================
+      const { error } =
+        await supabase
+
+        .from("antrians")
+
+        .insert([{
+
+          user_id:user.id,
+
+          layanan_id:layananId,
+
+          nomor_antrian:
+            nomorAntrian,
+
+          nama_pemohon:
+            userData.nama_lengkap,
+
+          jenis_kelamin:jk,
+
+          nomor_hp:hp,
+
+          alamat:alamat,
+
+          status:status,
+
+          perlu_verifikasi:
+            perluVerifikasi,
+
+          status_dokumen:
+            statusDokumen,
+
+          loket:loket,
+
+          expired_at:
+            expiredAt
+
+        }])
+
+      if(error){
+
+        alert(error.message)
+
+        setLoading(false)
+
+        return
+      }
+
+      // =========================
+      // ALERT
+      // =========================
+      if(perluVerifikasi){
+
+        alert(
+          "Silahkan menuju Front Office untuk pengecekan dokumen"
         )
-    }
 
-    // =========================
-    // E-OFFICE
-    // =========================
-    else if(
-      layanan.nama_layanan
-      === "E-Office"
-    ){
+      }else{
 
-      loket = "Loket 4"
+        alert(
 
-      nomorAntrian =
-        await generateNomorAntrian(
-          loket,
-          "EO"
-        )
-    }
-
-    // =========================
-    // PEREKAMAN
-    // =========================
-    else if(
-      layanan.nama_layanan
-      === "Perekaman"
-    ){
-
-      loket = "Loket 9"
-
-      nomorAntrian =
-        await generateNomorAntrian(
-          loket,
-          "PR"
-        )
-    }
-
-    // =========================
-    // LAYANAN FO
-    // =========================
-    else{
-
-      perluVerifikasi = true
-
-      loket = "FO"
-
-      status = "verifikasi"
-
-      statusDokumen = "pending"
-    }
-
-    // =========================
-    // SIMPAN DATABASE
-    // =========================
-    const { error } =
-      await supabase
-      .from("antrians")
-      .insert([{
-
-        user_id:user.id,
-
-        layanan_id:layananId,
-
-        nomor_antrian:
-          nomorAntrian,
-
-        nama_pemohon:
-          userData.nama_lengkap,
-
-        jenis_kelamin:jk,
-
-        nomor_hp:hp,
-
-        alamat:alamat,
-
-        status:status,
-
-        perlu_verifikasi:
-          perluVerifikasi,
-
-        status_dokumen:
-          statusDokumen,
-
-        loket:loket
-
-      }])
-
-    if(error){
-
-      alert(error.message)
-
-      setLoading(false)
-
-      return
-    }
-
-    // =========================
-    // NOTIFIKASI
-    // =========================
-    if(perluVerifikasi){
-
-      alert(
-        "Silahkan menuju Front Office untuk pengecekan dokumen"
-      )
-
-    }else{
-
-      alert(
 `Nomor antrian berhasil dibuat:
 
 ${nomorAntrian}
 
 Silahkan menuju ${loket}`
-      )
+
+        )
+      }
+
+      // =========================
+      // RESET FORM
+      // =========================
+      setLayananId("")
+
+      setJk("")
+
+      setHp("")
+
+      setAlamat("")
+
+      // =========================
+      // REDIRECT
+      // =========================
+      router.push("/user/dashboard")
+
+    }catch(err){
+
+      console.log(err)
+
+      alert("Terjadi kesalahan")
+
+    }finally{
+
+      setLoading(false)
     }
-
-    // =========================
-    // RESET FORM
-    // =========================
-    setLayananId("")
-
-    setJk("")
-
-    setHp("")
-
-    setAlamat("")
-
-    setLoading(false)
-
-    // =========================
-    // REDIRECT DASHBOARD
-    // =========================
-    router.push("/user/dashboard")
   }
 
   return (
@@ -361,6 +427,7 @@ Silahkan menuju ${loket}`
             p-6
             rounded-2xl
             shadow
+            w-full
             max-w-3xl
           "
         >
@@ -536,6 +603,7 @@ Silahkan menuju ${loket}`
               </label>
 
               <textarea
+                rows="4"
                 placeholder="Masukkan alamat lengkap"
                 className="
                   w-full
@@ -543,7 +611,6 @@ Silahkan menuju ${loket}`
                   p-3
                   rounded-lg
                 "
-                rows="4"
                 value={alamat}
                 onChange={(e)=>
                   setAlamat(e.target.value)

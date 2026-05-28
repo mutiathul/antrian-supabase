@@ -2,29 +2,29 @@
 
 import { useEffect, useState } from "react"
 
-import { supabase } from "../../../../lib/supabaseClient"
+import { supabase }
+from "../../../../lib/supabaseClient"
 
-import DashboardLayout from "../../../components/layouts/DashboardLayout"
+import DashboardLayout
+from "../../../components/layouts/DashboardLayout"
 
-import AuthGuard from "../../../components/guards/AuthGuard"
+import AuthGuard
+from "../../../components/guards/AuthGuard"
 
 export default function UserDashboard(){
 
-  const [antrian, setAntrian]
+  const [antrian,setAntrian]
     = useState(null)
 
-  const [loading, setLoading]
+  const [loading,setLoading]
     = useState(true)
 
+  const [sisaWaktu,setSisaWaktu]
+    = useState("")
+
   // =========================
-  // GET ANTRIAN USER
+  // GET DATA
   // =========================
-  useEffect(()=>{
-
-    getAntrian()
-
-  },[])
-
   async function getAntrian(){
 
     const {
@@ -37,27 +37,30 @@ export default function UserDashboard(){
       return
     }
 
-    const { data } = await supabase
+    const today =
+      new Date()
+      .toISOString()
+      .split("T")[0]
+
+    const { data,error }
+      = await supabase
+
       .from("antrians")
+
       .select(`
         *,
         layanans(*)
       `)
-      .eq("user_id", session.user.id)
 
-      .in("status",[
+      .eq(
+        "user_id",
+        session.user.id
+      )
 
-        "menunggu",
-
-        "dipanggil",
-
-        "verifikasi",
-
-        "diterima",
-
-        "ditolak"
-
-      ])
+      .eq(
+        "tanggal_antrian",
+        today
+      )
 
       .order("created_at",{
         ascending:false
@@ -65,9 +68,42 @@ export default function UserDashboard(){
 
       .limit(1)
 
-      .single()
+      .maybeSingle()
 
-    setAntrian(data)
+    if(error){
+
+      console.log(error)
+
+      setLoading(false)
+
+      return
+    }
+
+    // reset dashboard
+    if(
+
+      !data
+
+      ||
+
+      data.status === "diterima"
+
+      ||
+
+      data.status === "dibatalkan"
+
+      ||
+
+      data.status === "ditolak"
+
+    ){
+
+      setAntrian(null)
+
+    }else{
+
+      setAntrian(data)
+    }
 
     setLoading(false)
   }
@@ -77,8 +113,11 @@ export default function UserDashboard(){
   // =========================
   useEffect(()=>{
 
+    getAntrian()
+
     const channel = supabase
-      .channel("realtime-user")
+
+      .channel("user-dashboard")
 
       .on(
         "postgres_changes",
@@ -87,11 +126,13 @@ export default function UserDashboard(){
           schema:"public",
           table:"antrians"
         },
+
         ()=>{
 
           getAntrian()
         }
       )
+
       .subscribe()
 
     return ()=>{
@@ -100,6 +141,91 @@ export default function UserDashboard(){
     }
 
   },[])
+
+  // =========================
+  // COUNTDOWN
+  // =========================
+  useEffect(()=>{
+
+    if(!antrian?.expired_at) return
+
+    const interval = setInterval(()=>{
+
+      const now =
+        new Date().getTime()
+
+      const expired =
+        new Date(
+          antrian.expired_at
+        ).getTime()
+
+      const distance =
+        expired - now
+
+      if(distance <= 0){
+
+        setSisaWaktu("00:00")
+
+        clearInterval(interval)
+
+        return
+      }
+
+      const minutes = Math.floor(
+        distance / 1000 / 60
+      )
+
+      const seconds = Math.floor(
+        (distance / 1000) % 60
+      )
+
+      setSisaWaktu(
+
+        `${String(minutes)
+          .padStart(2,"0")}
+        :
+        ${String(seconds)
+          .padStart(2,"0")}`
+
+      )
+
+    },1000)
+
+    return ()=> clearInterval(interval)
+
+  },[antrian])
+
+  // =========================
+  // CANCEL USER
+  // =========================
+  async function cancelAntrian(){
+
+    const confirmCancel =
+      confirm(
+        "Batalkan antrian?"
+      )
+
+    if(!confirmCancel) return
+
+    const { error } = await supabase
+
+      .from("antrians")
+
+      .update({
+        status:"dibatalkan"
+      })
+
+      .eq("id", antrian.id)
+
+    if(error){
+
+      alert(error.message)
+
+      return
+    }
+
+    setAntrian(null)
+  }
 
   // =========================
   // LOADING
@@ -112,14 +238,12 @@ export default function UserDashboard(){
 
         <DashboardLayout role="masyarakat">
 
-          <div
-            className="
-              bg-white
-              p-6
-              rounded-2xl
-              shadow
-            "
-          >
+          <div className="
+            bg-white
+            p-6
+            rounded-2xl
+            shadow
+          ">
 
             Loading...
 
@@ -141,14 +265,10 @@ export default function UserDashboard(){
 
         <div className="mb-6">
 
-          <h1
-            className="
-              text-2xl
-              md:text-3xl
-              font-bold
-              text-gray-800
-            "
-          >
+          <h1 className="
+            text-3xl
+            font-bold
+          ">
 
             Dashboard Masyarakat
 
@@ -156,33 +276,28 @@ export default function UserDashboard(){
 
           <p className="text-gray-500 mt-1">
 
-            Informasi antrian terbaru anda
+            Informasi antrian terbaru
 
           </p>
 
         </div>
 
-        {/* BELUM ADA ANTRIAN */}
+        {/* BELUM ADA */}
 
         {
           !antrian && (
 
-            <div
-              className="
-                bg-white
-                p-6
-                rounded-2xl
-                shadow
-              "
-            >
+            <div className="
+              bg-white
+              p-6
+              rounded-2xl
+              shadow
+            ">
 
-              <h1
-                className="
-                  text-xl
-                  font-bold
-                  text-gray-800
-                "
-              >
+              <h1 className="
+                text-xl
+                font-bold
+              ">
 
                 Belum Ada Antrian
 
@@ -190,7 +305,7 @@ export default function UserDashboard(){
 
               <p className="text-gray-500 mt-2">
 
-                Silahkan ambil antrian terlebih dahulu
+                Silahkan ambil antrian
 
               </p>
 
@@ -199,173 +314,58 @@ export default function UserDashboard(){
           )
         }
 
-        {/* MENUNGGU VERIFIKASI FO */}
+        {/* CARD */}
 
         {
-          antrian?.status === "verifikasi"
-          && (
+          antrian && (
 
-            <div
-              className="
-                bg-yellow-100
-                border
-                border-yellow-300
+            <div className="
+              bg-white
+              rounded-2xl
+              shadow
+              overflow-hidden
+            ">
+
+              {/* HEADER */}
+
+              <div className="
+                bg-blue-600
                 p-6
-                rounded-2xl
-                shadow
-              "
-            >
+                text-white
+              ">
 
-              <h1
-                className="
-                  text-2xl
-                  font-bold
-                  text-yellow-800
-                  mb-3
-                "
-              >
-
-                Menunggu Verifikasi Dokumen
-
-              </h1>
-
-              <p
-                className="
-                  text-yellow-700
-                  text-lg
-                "
-              >
-
-                Silahkan menuju Front Office
-                untuk pengecekan dokumen.
-
-              </p>
-
-            </div>
-
-          )
-        }
-
-        {/* DOKUMEN DITOLAK */}
-
-        {
-          antrian?.status === "ditolak"
-          && (
-
-            <div
-              className="
-                bg-red-100
-                border
-                border-red-300
-                p-6
-                rounded-2xl
-                shadow
-              "
-            >
-
-              <h1
-                className="
-                  text-2xl
-                  font-bold
-                  text-red-800
-                  mb-3
-                "
-              >
-
-                Dokumen Ditolak
-
-              </h1>
-
-              <p
-                className="
-                  text-red-700
-                  text-lg
-                "
-              >
-
-                Dokumen anda belum lengkap.
-                Silahkan lengkapi berkas
-                dan ambil antrian kembali.
-
-              </p>
-
-            </div>
-
-          )
-        }
-
-        {/* SUDAH DAPAT ANTRIAN */}
-
-        {
-          antrian?.nomor_antrian
-          &&
-
-          antrian?.status !== "ditolak"
-          && (
-
-            <div
-              className="
-                bg-white
-                rounded-2xl
-                shadow
-                overflow-hidden
-              "
-            >
-
-              {/* HEADER CARD */}
-
-              <div
-                className="
-                  bg-blue-600
-                  p-6
-                  text-white
-                "
-              >
-
-                <div
-                  className="
-                    flex
-                    flex-col
-                    md:flex-row
-                    md:items-center
-                    md:justify-between
-                    gap-3
-                  "
-                >
+                <div className="
+                  flex
+                  justify-between
+                  items-center
+                ">
 
                   <div>
 
-                    <h1
-                      className="
-                        text-xl
-                        md:text-2xl
-                        font-bold
-                      "
-                    >
+                    <h1 className="
+                      text-2xl
+                      font-bold
+                    ">
 
                       Nomor Antrian
 
                     </h1>
 
-                    <p className="mt-1 opacity-90">
+                    <p className="opacity-90">
 
-                      Silahkan menunggu panggilan
+                      Silahkan tunggu panggilan
 
                     </p>
 
                   </div>
 
-                  <span
-                    className="
-                      bg-white/20
-                      px-4
-                      py-2
-                      rounded-full
-                      text-sm
-                      font-medium
-                      w-fit
-                    "
-                  >
+                  <span className="
+                    bg-white/20
+                    px-4
+                    py-2
+                    rounded-full
+                    capitalize
+                  ">
 
                     {antrian.status}
 
@@ -375,134 +375,117 @@ export default function UserDashboard(){
 
               </div>
 
-              {/* BODY CARD */}
+              {/* BODY */}
 
               <div className="p-6">
 
-                <div
-                  className="
-                    text-center
-                    mb-8
-                  "
-                >
+                {/* NOMOR */}
 
-                  <h1
-                    className="
-                      text-5xl
-                      md:text-7xl
-                      font-bold
-                      text-blue-700
-                    "
-                  >
+                <div className="
+                  text-center
+                  mb-8
+                ">
 
-                    {antrian.nomor_antrian}
+                  <h1 className="
+                    text-6xl
+                    font-bold
+                    text-blue-700
+                  ">
+
+                    {
+                      antrian.nomor_antrian
+                      || "-"
+                    }
 
                   </h1>
 
                 </div>
 
-                <div
+                {/* GRID */}
+
+                <div className="
+                  grid
+                  md:grid-cols-2
+                  gap-4
+                ">
+
+                  <InfoCard
+                    title="Tanggal"
+                    value={
+                      new Date(
+                        antrian.created_at
+                      ).toLocaleDateString(
+                        "id-ID"
+                      )
+                    }
+                  />
+
+                  <InfoCard
+                    title="Loket"
+                    value={
+                      antrian.loket || "-"
+                    }
+                  />
+
+                  <InfoCard
+                    title="Status"
+                    value={
+                      antrian.status
+                    }
+                  />
+
+                  <InfoCard
+                    title="Sisa Waktu"
+                    value={
+                      sisaWaktu || "-"
+                    }
+                  />
+
+                </div>
+
+                {/* CATATAN */}
+
+                <div className="
+                  mt-6
+                  bg-orange-50
+                  border
+                  border-orange-200
+                  rounded-xl
+                  p-4
+                ">
+
+                  <p className="
+                    text-orange-700
+                    font-medium
+                  ">
+
+                    Jika dalam 30 menit
+                    belum datang maka
+                    antrian otomatis batal.
+
+                  </p>
+
+                </div>
+
+                {/* BUTTON */}
+
+                <button
+                  onClick={cancelAntrian}
                   className="
-                    grid
-                    md:grid-cols-3
-                    gap-4
+                    mt-6
+                    w-full
+                    bg-red-600
+                    hover:bg-red-700
+                    text-white
+                    py-3
+                    rounded-xl
+                    font-medium
                   "
                 >
 
-                  {/* LAYANAN */}
+                  Batalkan Antrian
 
-                  <div
-                    className="
-                      bg-gray-50
-                      p-5
-                      rounded-xl
-                    "
-                  >
-
-                    <p className="text-gray-500">
-
-                      Layanan
-
-                    </p>
-
-                    <h1
-                      className="
-                        text-lg
-                        font-bold
-                        mt-2
-                      "
-                    >
-
-                      {
-                        antrian.layanans
-                        ?.nama_layanan
-                      }
-
-                    </h1>
-
-                  </div>
-
-                  {/* LOKET */}
-
-                  <div
-                    className="
-                      bg-gray-50
-                      p-5
-                      rounded-xl
-                    "
-                  >
-
-                    <p className="text-gray-500">
-
-                      Loket Tujuan
-
-                    </p>
-
-                    <h1
-                      className="
-                        text-lg
-                        font-bold
-                        mt-2
-                      "
-                    >
-
-                      {antrian.loket}
-
-                    </h1>
-
-                  </div>
-
-                  {/* STATUS */}
-
-                  <div
-                    className="
-                      bg-gray-50
-                      p-5
-                      rounded-xl
-                    "
-                  >
-
-                    <p className="text-gray-500">
-
-                      Status
-
-                    </p>
-
-                    <h1
-                      className="
-                        text-lg
-                        font-bold
-                        mt-2
-                      "
-                    >
-
-                      {antrian.status}
-
-                    </h1>
-
-                  </div>
-
-                </div>
+                </button>
 
               </div>
 
@@ -514,5 +497,43 @@ export default function UserDashboard(){
       </DashboardLayout>
 
     </AuthGuard>
+  )
+}
+
+// =========================
+// INFO CARD
+// =========================
+function InfoCard({
+
+  title,
+  value
+
+}){
+
+  return(
+
+    <div className="
+      bg-gray-50
+      p-5
+      rounded-xl
+    ">
+
+      <p className="text-gray-500">
+
+        {title}
+
+      </p>
+
+      <h1 className="
+        text-lg
+        font-bold
+        mt-2
+      ">
+
+        {value}
+
+      </h1>
+
+    </div>
   )
 }

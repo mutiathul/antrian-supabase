@@ -1,12 +1,20 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState }
 
-import { supabase } from "../../../../lib/supabaseClient"
+from "react"
 
-import DashboardLayout from "../../../components/layouts/DashboardLayout"
+import { supabase }
 
-import AuthGuard from "../../../components/guards/AuthGuard"
+from "../../../../lib/supabaseClient"
+
+import DashboardLayout
+
+from "../../../components/layouts/DashboardLayout"
+
+import AuthGuard
+
+from "../../../components/guards/AuthGuard"
 
 export default function DashboardPetugas(){
 
@@ -16,17 +24,8 @@ export default function DashboardPetugas(){
   const [antrians, setAntrians]
     = useState([])
 
-  const [total, setTotal]
-    = useState(0)
-
-  const [menunggu, setMenunggu]
-    = useState(0)
-
-  const [dipanggil, setDipanggil]
-    = useState(0)
-
-  const [selesai, setSelesai]
-    = useState(0)
+  const [loading, setLoading]
+    = useState(true)
 
   // =========================
   // GET USER LOGIN
@@ -45,94 +44,159 @@ export default function DashboardPetugas(){
 
     if(!session) return
 
-    const { data } = await supabase
+    const { data, error }
+      = await supabase
+
       .from("users")
+
       .select("*")
+
       .eq("id", session.user.id)
+
       .single()
+
+    if(error){
+
+      console.log(error)
+
+      return
+    }
 
     setUserData(data)
   }
 
   // =========================
-  // GET ANTRIAN
+  // AUTO EXPIRED
   // =========================
   useEffect(()=>{
 
-    if(userData){
+    checkExpired()
 
-      getAntrians()
-    }
+    const interval = setInterval(()=>{
 
-  },[userData])
+      checkExpired()
 
- async function getAntrians(){
+    },10000)
 
-  if(!userData?.loket) return
+    return ()=> clearInterval(interval)
 
-  console.log("LOKET LOGIN:", userData.loket)
+  },[])
 
-  const { data, error } = await supabase
-    .from("antrians")
-    .select(`
-      *,
-      layanans(*)
-    `)
-     .eq(
-  "loket", 
+  async function checkExpired(){
 
-  userData.loket === "FO"
-    ? "FO"
-    : userData.loket
-)
-    .order("created_at", {
-      ascending:true
-    })
+    const now =
+      new Date().toISOString()
 
-  console.log("DATA ANTRIAN:", data)
+    await supabase
 
-  if(error){
+      .from("antrians")
 
-    console.log(error)
-    return
+      .update({
+        status:"dibatalkan"
+      })
+
+      .lt("expired_at", now)
+
+      .in("status",[
+        "menunggu",
+        "diproses"
+      ])
   }
 
-  setAntrians(data || [])
+  // =========================
+  // GET ANTRIANS
+  // =========================
+  async function getAntrians(loketPetugas){
 
-  setTotal(data?.length || 0)
+    if(!loketPetugas) return
 
-  setMenunggu(
-    data?.filter(
-      i =>
-        i.status === "menunggu"
-        ||
-        i.status === "verifikasi"
-    ).length || 0
-  )
+    setLoading(true)
 
-  setDipanggil(
-    data?.filter(
-      i => i.status === "dipanggil"
-    ).length || 0
-  )
+    const today =
+      new Date()
+      .toISOString()
+      .split("T")[0]
 
-  setSelesai(
-    data?.filter(
-      i =>
-        i.status === "diterima"
-        ||
-        i.status === "ditolak"
-    ).length || 0
-  )
-}
+    let query = supabase
+
+      .from("antrians")
+
+      .select(`
+        *,
+        layanans(*)
+      `)
+
+      .eq(
+        "tanggal_antrian",
+        today
+      )
+
+    // =========================
+    // FRONT OFFICE
+    // =========================
+    if(loketPetugas === "FO"){
+
+      query = query.eq(
+        "status",
+        "verifikasi"
+      )
+
+    }else{
+
+      query = query
+
+        .eq("loket", loketPetugas)
+
+        .in("status",[
+          "menunggu",
+          "diproses"
+        ])
+    }
+
+    const { data, error }
+      = await query
+
+      .order("created_at",{
+        ascending:true
+      })
+
+    if(error){
+
+      console.log(error)
+
+      setLoading(false)
+
+      return
+    }
+
+    setAntrians(data || [])
+
+    setLoading(false)
+  }
+
+  // =========================
+  // LOAD DATA
+  // =========================
+  useEffect(()=>{
+
+    if(!userData?.loket) return
+
+    getAntrians(userData.loket)
+
+  },[userData])
 
   // =========================
   // REALTIME
   // =========================
   useEffect(()=>{
 
+    if(!userData?.loket) return
+
     const channel = supabase
-      .channel("dashboard-petugas")
+
+      .channel(
+        `petugas-${userData.loket}`
+      )
 
       .on(
         "postgres_changes",
@@ -141,14 +205,13 @@ export default function DashboardPetugas(){
           schema:"public",
           table:"antrians"
         },
+
         ()=>{
 
-          if(userData){
-
-            getAntrians()
-          }
+          getAntrians(userData.loket)
         }
       )
+
       .subscribe()
 
     return ()=>{
@@ -159,46 +222,88 @@ export default function DashboardPetugas(){
   },[userData])
 
   // =========================
-  // PANGGIL ANTRIAN
+  // PANGGIL
   // =========================
-  async function panggil(item){
+ async function panggil(item){
 
-    if(item.status === "dipanggil"){
+  speechSynthesis.cancel()
 
-      alert("Antrian sudah dipanggil")
+  const textSuara =
+
+    `Nomor antrian
+    ${item.nomor_antrian},
+    silahkan menuju
+    ${item.loket}`
+
+  const suara =
+    new SpeechSynthesisUtterance(
+      textSuara
+    )
+
+  suara.lang = "id-ID"
+
+  suara.rate = 0.9
+
+  suara.pitch = 1
+
+  suara.volume = 1
+
+  speechSynthesis.speak(suara)
+}
+
+  // =========================
+  // PROSES ANTRIAN
+  // =========================
+  async function prosesAntrian(item){
+
+    // jika diproses petugas lain
+    if(
+
+      item.diproses_oleh
+
+      &&
+
+      item.diproses_oleh
+      !== userData.id
+
+    ){
+
+      alert(
+        "Antrian sedang diproses petugas lain"
+      )
+
       return
     }
 
-    await supabase
+    const { error }
+      = await supabase
+
       .from("antrians")
+
       .update({
-        status:"dipanggil"
+
+        status:"diproses",
+
+        diproses_oleh:
+          userData.id
+
       })
+
       .eq("id", item.id)
 
-    const textSuara =
-
-      `Nomor antrian
-      ${item.nomor_antrian},
-      silahkan menuju
-      ${item.loket}`
-
-    const suara =
-      new SpeechSynthesisUtterance(
-        textSuara
+      .eq(
+        "status",
+        "menunggu"
       )
 
-    suara.lang = "id-ID"
+    if(error){
 
-    suara.rate = 0.9
+      alert(error.message)
 
-    suara.pitch = 1
+      return
+    }
 
-    suara.volume = 1
-
-    speechSynthesis.cancel()
-
-    speechSynthesis.speak(suara)
+    getAntrians(userData.loket)
   }
 
   // =========================
@@ -206,12 +311,27 @@ export default function DashboardPetugas(){
   // =========================
   async function selesaiAntrian(id){
 
-    await supabase
+    const { error }
+      = await supabase
+
       .from("antrians")
+
       .update({
+
         status:"diterima"
+
       })
+
       .eq("id", id)
+
+    if(error){
+
+      alert(error.message)
+
+      return
+    }
+
+    getAntrians(userData.loket)
   }
 
   // =========================
@@ -219,108 +339,154 @@ export default function DashboardPetugas(){
   // =========================
  async function approveFO(item){
 
-  try{
+  const today =
+    new Date()
+    .toISOString()
+    .split("T")[0]
 
-    // =========================
-    // TANGGAL HARI INI
-    // =========================
+  // =========================
+  // AMBIL DATA LAYANAN
+  // =========================
+ // =========================
+// AMBIL NAMA LAYANAN
+// =========================
+const namaLayanan =
+  item.layanans?.nama_layanan
 
-    const today =
-      new Date()
-      .toISOString()
-      .split("T")[0]
+let kodeAntrian = ""
+let loketTujuan = "Loket 8"
 
-    // =========================
-    // HITUNG TOTAL LOKET 8
-    // =========================
+// =========================
+// KARTU KELUARGA
+// =========================
+if(
+  namaLayanan === "Kartu Keluarga"
+){
 
-    const { data: totalToday, error: totalError }
-      = await supabase
+  kodeAntrian = "KK"
+}
 
-      .from("antrians")
+// =========================
+// PINDAH DATANG
+// =========================
+else if(
+  namaLayanan === "Pindah Datang"
+){
 
-      .select("id")
+  kodeAntrian = "PD"
+}
 
-      .eq("loket", "Loket 8")
+// =========================
+// AKTA LAHIR
+// =========================
+else if(
+  namaLayanan === "Akta Lahir"
+){
 
-      .eq("tanggal_antrian", today)
+  kodeAntrian = "AL"
+}
 
-    if(totalError){
+// =========================
+// AKTA KEMATIAN
+// =========================
+else if(
+  namaLayanan === "Akta Kematian"
+){
 
-      alert(totalError.message)
-      return
-    }
+  kodeAntrian = "AK"
+}
 
-    // =========================
-    // NOMOR URUT
-    // =========================
+// =========================
+// DEFAULT
+// =========================
+else{
 
-    const nomorUrut = String(
-      (totalToday?.length || 0) + 1
-    ).padStart(3,"0")
+  kodeAntrian = "FO"
+}
 
-    // =========================
-    // NOMOR ANTRIAN
-    // =========================
+  // =========================
+  // HITUNG NOMOR HARI INI
+  // =========================
+ const { data: totalToday }
+  = await supabase
 
-    const nomorAntrian =
-      `A-${nomorUrut}`
+  .from("antrians")
 
-    // =========================
-    // UPDATE DATABASE
-    // =========================
+  .select("id")
 
-    const { data:updateData, error:updateError }
-      = await supabase
+  .like(
+    "nomor_antrian",
+    `${kodeAntrian}-%`
+  )
 
-      .from("antrians")
+  .eq(
+    "tanggal_antrian",
+    today
+  )
+  const nomorUrut = String(
 
-      .update({
+    (totalToday?.length || 0) + 1
 
-        nomor_antrian:
-          nomorAntrian,
+  ).padStart(3,"0")
 
-        loket:
-          "Loket 8",
+  // =========================
+  // FORMAT NOMOR
+  // =========================
+  const nomorAntrian =
+    `${kodeAntrian}-${nomorUrut}`
 
-        status:
-          "menunggu",
+  // =========================
+  // EXPIRED
+  // =========================
+  const expiredAt =
+    new Date(
+      Date.now() + 30 * 60 * 1000
+    ).toISOString()
 
-        status_dokumen:
-          "lengkap",
+  // =========================
+  // UPDATE DATABASE
+  // =========================
+  const { error } = await supabase
 
-        perlu_verifikasi:
-          false
+    .from("antrians")
 
-      })
+    .update({
 
-      .eq("id", item.id)
+      nomor_antrian:
+        nomorAntrian,
 
-      .select()
+      loket:
+        loketTujuan,
 
-    console.log(updateData)
+      status:
+        "menunggu",
 
-    if(updateError){
+      status_dokumen:
+        "lengkap",
 
-      alert(updateError.message)
-      return
-    }
+      perlu_verifikasi:
+        false,
 
-    alert(
-      `Antrian berhasil dibuat:
-${nomorAntrian}
-Menuju Loket 8`
-    )
+      expired_at:
+        expiredAt
 
-    // refresh
-    getAntrians()
+    })
 
-  }catch(err){
+    .eq("id", item.id)
 
-    console.log(err)
+  if(error){
 
-    alert("Terjadi kesalahan")
+    alert(error.message)
+
+    return
   }
+
+  alert(
+    `Antrian ${nomorAntrian}
+masuk ke ${loketTujuan}`
+  )
+
+  getAntrians(userData.loket)
 }
 
   // =========================
@@ -328,8 +494,11 @@ Menuju Loket 8`
   // =========================
   async function tolakFO(id){
 
-    await supabase
+    const { error }
+      = await supabase
+
       .from("antrians")
+
       .update({
 
         status:"ditolak",
@@ -338,10 +507,34 @@ Menuju Loket 8`
           "ditolak"
 
       })
+
       .eq("id", id)
 
-    alert("Dokumen ditolak")
+    if(error){
+
+      alert(error.message)
+
+      return
+    }
+
+    getAntrians(userData.loket)
   }
+
+  // =========================
+  // COUNT
+  // =========================
+  const total =
+    antrians.length
+
+  const menunggu =
+    antrians.filter(
+      i => i.status === "menunggu"
+    ).length
+
+  const diproses =
+    antrians.filter(
+      i => i.status === "diproses"
+    ).length
 
   return(
 
@@ -351,45 +544,24 @@ Menuju Loket 8`
 
         {/* HEADER */}
 
-        <div
-          className="
-            flex
-            flex-col
-            md:flex-row
-            md:items-center
-            md:justify-between
-            gap-4
-            mb-6
-          "
-        >
+        <div className="mb-6">
 
-          <div>
+          <h1
+            className="
+              text-3xl
+              font-bold
+            "
+          >
 
-            <h1
-              className="
-                text-2xl
-                md:text-3xl
-                font-bold
-                text-gray-800
-              "
-            >
+            Dashboard Petugas
 
-              Dashboard Petugas
+          </h1>
 
-            </h1>
+          <p className="text-gray-500 mt-1">
 
-            <p
-              className="
-                text-gray-500
-                mt-1
-              "
-            >
+            {userData?.loket}
 
-              {userData?.loket}
-
-            </p>
-
-          </div>
+          </p>
 
         </div>
 
@@ -399,7 +571,7 @@ Menuju Loket 8`
           className="
             grid
             grid-cols-2
-            lg:grid-cols-4
+            lg:grid-cols-3
             gap-4
             mb-6
           "
@@ -416,18 +588,13 @@ Menuju Loket 8`
           />
 
           <Card
-            title="Dipanggil"
-            value={dipanggil}
-          />
-
-          <Card
-            title="Selesai"
-            value={selesai}
+            title="Diproses"
+            value={diproses}
           />
 
         </div>
 
-        {/* TABEL */}
+        {/* TABLE */}
 
         <div
           className="
@@ -449,7 +616,6 @@ Menuju Loket 8`
               className="
                 text-xl
                 font-bold
-                text-gray-800
               "
             >
 
@@ -466,7 +632,6 @@ Menuju Loket 8`
               <thead
                 className="
                   bg-gray-100
-                  text-gray-700
                 "
               >
 
@@ -478,10 +643,6 @@ Menuju Loket 8`
 
                   <th className="p-4 text-left">
                     Nama
-                  </th>
-
-                  <th className="p-4 text-left">
-                    Layanan
                   </th>
 
                   <th className="p-4 text-left">
@@ -499,16 +660,31 @@ Menuju Loket 8`
               <tbody>
 
                 {
-                  antrians.length > 0 ? (
+                  loading ? (
+
+                    <tr>
+
+                      <td
+                        colSpan="4"
+                        className="
+                          p-10
+                          text-center
+                        "
+                      >
+
+                        Loading...
+
+                      </td>
+
+                    </tr>
+
+                  ) : antrians.length > 0 ? (
 
                     antrians.map((item)=>(
 
                       <tr
                         key={item.id}
-                        className="
-                          border-t
-                          hover:bg-gray-50
-                        "
+                        className="border-t"
                       >
 
                         <td
@@ -534,39 +710,20 @@ Menuju Loket 8`
 
                         <td className="p-4">
 
-                          {
-                            item.layanans
-                            ?.nama_layanan
-                          }
-
-                        </td>
-
-                        <td className="p-4">
-
                           <span
                             className={`
-
                               px-3 py-1
                               rounded-full
                               text-sm
-                              font-medium
 
                               ${
-                                item.status === "menunggu"
+                                item.status
+                                === "menunggu"
+
                                 ? "bg-yellow-100 text-yellow-700"
 
-                                : item.status === "dipanggil"
-                                ? "bg-blue-100 text-blue-700"
-
-                                : item.status === "ditolak"
-                                ? "bg-red-100 text-red-700"
-
-                                : item.status === "verifikasi"
-                                ? "bg-purple-100 text-purple-700"
-
-                                : "bg-green-100 text-green-700"
+                                : "bg-blue-100 text-blue-700"
                               }
-
                             `}
                           >
 
@@ -578,115 +735,150 @@ Menuju Loket 8`
 
                         <td className="p-4">
 
-                          <div
-                            className="
-                              flex
-                              flex-wrap
-                              gap-2
-                            "
-                          >
+                          {
+                            userData?.loket
+                            === "FO"
 
-                            {/* FO */}
+                            ? (
 
-                            {
-                              userData?.loket
-                              === "FO"
+                              <div className="flex gap-2">
 
-                              &&
-
-                              item.status
-                              === "verifikasi"
-
-                              && (
-
-                                <>
-
-                                  <button
-                                    onClick={()=>
-                                      approveFO(item)
-                                    }
-                                    className="
-                                      bg-green-600
-                                      hover:bg-green-700
-                                      text-white
-                                      px-4 py-2
-                                      rounded-lg
-                                      text-sm
-                                    "
-                                  >
-
-                                    Dokumen Lengkap
-
-                                  </button>
-
-                                  <button
-                                    onClick={()=>
-                                      tolakFO(item.id)
-                                    }
-                                    className="
-                                      bg-red-600
-                                      hover:bg-red-700
-                                      text-white
-                                      px-4 py-2
-                                      rounded-lg
-                                      text-sm
-                                    "
-                                  >
-
-                                    Dokumen Ditolak
-
-                                  </button>
-
-                                </>
-
-                              )
-                            }
-
-                            {/* LOKET BIASA */}
-
-                            {
-                              userData?.loket
-                              !== "FO"
-
-                              && (
-
-                                <>
-
-                                  {
-                                    item.status
-                                    !== "dipanggil"
-
-                                    &&
-
-                                    item.status
-                                    !== "diterima"
-
-                                    &&
-
-                                    <button
-                                      onClick={()=>
-                                        panggil(item)
-                                      }
-                                      className="
-                                        bg-blue-600
-                                        hover:bg-blue-700
-                                        text-white
-                                        px-4 py-2
-                                        rounded-lg
-                                        text-sm
-                                      "
-                                    >
-
-                                      Panggil
-
-                                    </button>
+                                <button
+                                  onClick={()=>
+                                    approveFO(item)
                                   }
+                                  className="
+                                    bg-green-600
+                                    text-white
+                                    px-4 py-2
+                                    rounded-lg
+                                  "
+                                >
 
-                                  {
-                                    item.status
-                                    !== "diterima"
+                                  Lengkap
 
-                                    &&
+                                </button>
+
+                                <button
+                                  onClick={()=>
+                                    tolakFO(item.id)
+                                  }
+                                  className="
+                                    bg-red-600
+                                    text-white
+                                    px-4 py-2
+                                    rounded-lg
+                                  "
+                                >
+
+                                  Tolak
+
+                                </button>
+
+                              </div>
+
+                            ) : (
+
+                              <div className="flex gap-2">
+
+                                {/* =========================
+                                    STATUS MENUNGGU
+                                ========================= */}
+
+                                {
+                                  item.status
+                                  === "menunggu"
+
+                                  && (
+
+                                    <>
+
+                                      {/* PANGGIL */}
+
+                                      <button
+                                        onClick={()=>
+                                          panggil(item)
+                                        }
+                                        className="
+                                          bg-blue-600
+                                          text-white
+                                          px-4 py-2
+                                          rounded-lg
+                                        "
+                                      >
+
+                                        Panggil
+
+                                      </button>
+
+                                      {/* PROSES */}
+
+                                      {
+                                        (
+                                          !item.diproses_oleh
+
+                                          ||
+
+                                          item.diproses_oleh
+                                          === userData.id
+                                        )
+
+                                        ? (
+
+                                          <button
+                                            onClick={()=>
+                                              prosesAntrian(item)
+                                            }
+                                            className="
+                                              bg-yellow-500
+                                              text-white
+                                              px-4 py-2
+                                              rounded-lg
+                                            "
+                                          >
+
+                                            Proses
+
+                                          </button>
+
+                                        ) : (
+
+                                          <span
+                                            className="
+                                              bg-red-100
+                                              text-red-700
+                                              px-3 py-2
+                                              rounded-lg
+                                              text-sm
+                                            "
+                                          >
+
+                                            Diproses petugas lain
+
+                                          </span>
+
+                                        )
+                                      }
+
+                                    </>
+
+                                  )
+                                }
+
+                                {/* =========================
+                                    STATUS DIPROSES
+                                ========================= */}
+
+                                {
+                                  item.status
+                                  === "diproses"
+
+                                  &&
+
+                                  item.diproses_oleh
+                                  === userData.id
+
+                                  && (
 
                                     <button
                                       onClick={()=>
@@ -694,25 +886,23 @@ Menuju Loket 8`
                                       }
                                       className="
                                         bg-green-600
-                                        hover:bg-green-700
                                         text-white
                                         px-4 py-2
                                         rounded-lg
-                                        text-sm
                                       "
                                     >
 
                                       Selesai
 
                                     </button>
-                                  }
 
-                                </>
+                                  )
+                                }
 
-                              )
-                            }
+                              </div>
 
-                          </div>
+                            )
+                          }
 
                         </td>
 
@@ -725,10 +915,10 @@ Menuju Loket 8`
                     <tr>
 
                       <td
-                        colSpan="5"
+                        colSpan="4"
                         className="
-                          text-center
                           p-10
+                          text-center
                           text-gray-500
                         "
                       >
@@ -757,9 +947,8 @@ Menuju Loket 8`
 }
 
 // =========================
-// CARD COMPONENT
+// CARD
 // =========================
-
 function Card({
 
   title,
@@ -775,39 +964,26 @@ function Card({
         rounded-2xl
         shadow
         p-5
-        min-h-[120px]
-
-        flex
-        flex-col
-        justify-center
       "
     >
 
-      <p
-        className="
-          text-gray-500
-          text-sm
-          md:text-base
-        "
-      >
+      <p className="text-gray-500">
 
         {title}
 
       </p>
 
-      <h2
+      <h1
         className="
-          text-3xl
-          md:text-4xl
+          text-4xl
           font-bold
           mt-2
-          text-gray-800
         "
       >
 
         {value}
 
-      </h2>
+      </h1>
 
     </div>
   )
