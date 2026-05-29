@@ -12,30 +12,24 @@ import AuthGuard from "../../../components/guards/AuthGuard"
 
 export default function AmbilAntrianPage() {
 
+  const router = useRouter()
+
   const [layanans, setLayanans] = useState([])
 
   const [userData, setUserData] = useState(null)
 
   const [layananId, setLayananId] = useState("")
 
-  const [jk, setJk] = useState("")
-
-  const [hp, setHp] = useState("")
-
-  const [alamat, setAlamat] = useState("")
-
   const [loading, setLoading] = useState(false)
 
-  const router = useRouter()
-
   // =========================
-  // GET DATA AWAL
+  // LOAD DATA
   // =========================
   useEffect(() => {
 
-    getLayanans()
-
     getUser()
+
+    getLayanans()
 
   }, [])
 
@@ -82,61 +76,58 @@ export default function AmbilAntrianPage() {
   // =========================
   // GENERATE NOMOR ANTRIAN
   // =========================
- async function generateNomorAntrian(
-  kode
-){
+  async function generateNomorAntrian(
+    kode
+  ) {
 
-  const today =
-    new Date()
-    .toISOString()
-    .split("T")[0]
+    const today =
+      new Date()
+      .toISOString()
+      .split("T")[0]
 
-  // =========================
-  // HITUNG BERDASARKAN KODE
-  // =========================
-  const { data } = await supabase
+    const { data } = await supabase
 
-    .from("antrians")
+      .from("antrians")
 
-    .select("id")
+      .select("id")
 
-    .like(
-      "nomor_antrian",
-      `${kode}-%`
-    )
+      .like(
+        "nomor_antrian",
+        `${kode}-%`
+      )
 
-    .eq(
-      "tanggal_antrian",
-      today
-    )
+      .eq(
+        "tanggal_antrian",
+        today
+      )
 
-  const nomorUrut = String(
+    const nomorUrut = String(
 
-    (data?.length || 0) + 1
+      (data?.length || 0) + 1
 
-  ).padStart(3,"0")
+    ).padStart(3, "0")
 
-  return `${kode}-${nomorUrut}`
-}
+    return `${kode}-${nomorUrut}`
+  }
 
   // =========================
   // SUBMIT
   // =========================
-  async function handleSubmit(e){
+  async function handleSubmit(e) {
 
     e.preventDefault()
 
-    if(loading) return
+    if (loading) return
 
     setLoading(true)
 
-    try{
+    try {
 
       const {
-        data:{session}
+        data: { session }
       } = await supabase.auth.getSession()
 
-      if(!session){
+      if (!session) {
 
         alert("Session login tidak ditemukan")
 
@@ -153,23 +144,20 @@ export default function AmbilAntrianPage() {
       const { data: existing } =
         await supabase
 
-        .from("antrians")
+          .from("antrians")
 
-        .select("*")
+          .select("*")
 
-        .eq("user_id", user.id)
+          .eq("user_id", user.id)
 
-        .in("status", [
+          .in("status", [
+            "menunggu",
+            "dipanggil",
+            "diproses",
+            "verifikasi"
+          ])
 
-          "menunggu",
-
-          "dipanggil",
-
-          "verifikasi"
-
-        ])
-
-      if(existing?.length > 0){
+      if (existing?.length > 0) {
 
         alert(
           "Masih ada antrian aktif"
@@ -186,15 +174,15 @@ export default function AmbilAntrianPage() {
       const { data: layanan } =
         await supabase
 
-        .from("layanans")
+          .from("layanans")
 
-        .select("*")
+          .select("*")
 
-        .eq("id", layananId)
+          .eq("id", layananId)
 
-        .single()
+          .single()
 
-      if(!layanan){
+      if (!layanan) {
 
         alert("Layanan tidak ditemukan")
 
@@ -218,88 +206,89 @@ export default function AmbilAntrianPage() {
 
       let kodeAntrian = ""
 
-     // =========================
-// IKD
-// =========================
-if(
-  layanan.nama_layanan
-  === "IKD"
-){
+      // =========================
+      // IKD
+      // =========================
+      if (
+        layanan.nama_layanan
+        === "IKD"
+      ) {
 
-  loket = "Loket 1"
+        loket = "Loket 1"
 
-  kodeAntrian = "IK"
-}
+        kodeAntrian = "IK"
+      }
 
-// =========================
-// CETAK KTP
-// =========================
-else if(
-  layanan.nama_layanan
-  === "Cetak KTP"
-){
+      // =========================
+      // CETAK KTP
+      // =========================
+      else if (
+        layanan.nama_layanan
+        === "Cetak KTP"
+      ) {
 
-  loket = "Loket 2"
+        loket = "Loket 2"
 
-  kodeAntrian = "CT"
-}
+        kodeAntrian = "CT"
+      }
 
-// =========================
-// KIA
-// =========================
-else if(
-  layanan.nama_layanan
-  === "KIA"
-){
+      // =========================
+      // KIA
+      // =========================
+      else if (
+        layanan.nama_layanan
+        === "KIA"
+      ) {
 
-  loket = "Loket 2"
+        loket = "Loket 2"
 
-  kodeAntrian = "KI"
-}
+        kodeAntrian = "KI"
+      }
 
-// =========================
-// E-OFFICE
-// =========================
-else if(
-  layanan.nama_layanan
-  === "E-Office"
-){
+      // =========================
+      // E-OFFICE
+      // =========================
+      else if (
+        layanan.nama_layanan
+        === "E-Office"
+      ) {
 
-  loket = "Loket 4"
+        loket = "Loket 4"
 
-  kodeAntrian = "EO"
-}
+        kodeAntrian = "EO"
+      }
 
-// =========================
-// PEREKAMAN KTP
-// =========================
-else if(
-  layanan.nama_layanan
-  === "Perekaman KTP"
-){
+      // =========================
+      // PEREKAMAN KTP
+      // =========================
+      else if (
+        layanan.nama_layanan
+        === "Perekaman KTP"
+      ) {
 
-  loket = "Loket 9"
+        loket = "Loket 9"
 
-  kodeAntrian = "PR"
-}
+        kodeAntrian = "PR"
+      }
 
-// =========================
-// LAYANAN FO
-// =========================
-else{
+      // =========================
+      // LAYANAN FO
+      // =========================
+      else {
 
-  perluVerifikasi = true
+        perluVerifikasi = true
 
-  loket = "FO"
+        loket = "FO"
 
-  status = "verifikasi"
+        status = "verifikasi"
 
-  statusDokumen = "pending"
-}
+        statusDokumen = "pending"
+      }
+
       // =========================
       // GENERATE NOMOR
       // =========================
-      if(!perluVerifikasi){
+      if (!perluVerifikasi) {
 
         nomorAntrian =
           await generateNomorAntrian(
@@ -316,47 +305,55 @@ else{
         ).toISOString()
 
       // =========================
+      // FORMAT ALAMAT
+      // =========================
+      const alamatLengkap = `Kecamatan ${userData?.kecamatan}, Nagari ${userData?.nagari}, Jorong ${userData?.jorong}`
+
+      // =========================
       // SIMPAN DATABASE
       // =========================
       const { error } =
         await supabase
 
-        .from("antrians")
+          .from("antrians")
 
-        .insert([{
+          .insert([{
 
-          user_id:user.id,
+            user_id: user.id,
 
-          layanan_id:layananId,
+            layanan_id: layananId,
 
-          nomor_antrian:
-            nomorAntrian,
+            nomor_antrian:
+              nomorAntrian,
 
-          nama_pemohon:
-            userData.nama_lengkap,
+            nama_pemohon:
+              userData?.nama_lengkap,
 
-          jenis_kelamin:jk,
+            jenis_kelamin:
+              userData?.jenis_kelamin,
 
-          nomor_hp:hp,
+            nomor_hp:
+              userData?.nomor_hp,
 
-          alamat:alamat,
+            alamat:
+              alamatLengkap,
 
-          status:status,
+            status: status,
 
-          perlu_verifikasi:
-            perluVerifikasi,
+            perlu_verifikasi:
+              perluVerifikasi,
 
-          status_dokumen:
-            statusDokumen,
+            status_dokumen:
+              statusDokumen,
 
-          loket:loket,
+            loket: loket,
 
-          expired_at:
-            expiredAt
+            expired_at:
+              expiredAt
 
-        }])
+          }])
 
-      if(error){
+      if (error) {
 
         alert(error.message)
 
@@ -368,13 +365,13 @@ else{
       // =========================
       // ALERT
       // =========================
-      if(perluVerifikasi){
+      if (perluVerifikasi) {
 
         alert(
           "Silahkan menuju Front Office untuk pengecekan dokumen"
         )
 
-      }else{
+      } else {
 
         alert(
 
@@ -388,28 +385,22 @@ Silahkan menuju ${loket}`
       }
 
       // =========================
-      // RESET FORM
+      // RESET
       // =========================
       setLayananId("")
-
-      setJk("")
-
-      setHp("")
-
-      setAlamat("")
 
       // =========================
       // REDIRECT
       // =========================
       router.push("/user/dashboard")
 
-    }catch(err){
+    } catch (err) {
 
       console.log(err)
 
       alert("Terjadi kesalahan")
 
-    }finally{
+    } finally {
 
       setLoading(false)
     }
@@ -421,236 +412,341 @@ Silahkan menuju ${loket}`
 
       <DashboardLayout role="masyarakat">
 
-        <div
-          className="
-            bg-white
-            p-6
-            rounded-2xl
-            shadow
-            w-full
-            max-w-3xl
-          "
-        >
+        <div className="flex justify-center px-3 sm:px-5 py-4">
 
-          <h1
+          <div
             className="
-              text-2xl
-              md:text-3xl
-              font-bold
-              mb-6
+              w-full
+              max-w-5xl
+              bg-white
+              rounded-[28px]
+              border
+              border-gray-100
+              shadow-sm
+              overflow-hidden
             "
           >
 
-            Ambil Antrian
+            {/* HEADER */}
 
-          </h1>
-
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-4"
-          >
-
-            {/* LAYANAN */}
-
-            <div>
-
-              <label className="block mb-2 font-medium">
-
-                Jenis Layanan
-
-              </label>
-
-              <select
-                className="
-                  w-full
-                  border
-                  p-3
-                  rounded-lg
-                "
-                value={layananId}
-                onChange={(e)=>
-                  setLayananId(e.target.value)
-                }
-                required
-              >
-
-                <option value="">
-                  Pilih Layanan
-                </option>
-
-                {
-                  layanans.map((item)=>(
-
-                    <option
-                      key={item.id}
-                      value={item.id}
-                    >
-
-                      {item.nama_layanan}
-
-                    </option>
-
-                  ))
-                }
-
-              </select>
-
-            </div>
-
-            {/* NAMA */}
-
-            <div>
-
-              <label className="block mb-2 font-medium">
-
-                Nama Pemohon
-
-              </label>
-
-              <input
-                type="text"
-                className="
-                  w-full
-                  border
-                  p-3
-                  rounded-lg
-                  bg-gray-100
-                "
-                value={
-                  userData?.nama_lengkap || ""
-                }
-                readOnly
-              />
-
-            </div>
-
-            {/* JK */}
-
-            <div>
-
-              <label className="block mb-2 font-medium">
-
-                Jenis Kelamin
-
-              </label>
-
-              <select
-                className="
-                  w-full
-                  border
-                  p-3
-                  rounded-lg
-                "
-                value={jk}
-                onChange={(e)=>
-                  setJk(e.target.value)
-                }
-                required
-              >
-
-                <option value="">
-                  Pilih Jenis Kelamin
-                </option>
-
-                <option value="Laki-laki">
-                  Laki-laki
-                </option>
-
-                <option value="Perempuan">
-                  Perempuan
-                </option>
-
-              </select>
-
-            </div>
-
-            {/* HP */}
-
-            <div>
-
-              <label className="block mb-2 font-medium">
-
-                Nomor HP
-
-              </label>
-
-              <input
-                type="text"
-                placeholder="08xxxxxxxxxx"
-                className="
-                  w-full
-                  border
-                  p-3
-                  rounded-lg
-                "
-                value={hp}
-                onChange={(e)=>
-                  setHp(e.target.value)
-                }
-                required
-              />
-
-            </div>
-
-            {/* ALAMAT */}
-
-            <div>
-
-              <label className="block mb-2 font-medium">
-
-                Alamat
-
-              </label>
-
-              <textarea
-                rows="4"
-                placeholder="Masukkan alamat lengkap"
-                className="
-                  w-full
-                  border
-                  p-3
-                  rounded-lg
-                "
-                value={alamat}
-                onChange={(e)=>
-                  setAlamat(e.target.value)
-                }
-                required
-              />
-
-            </div>
-
-            {/* BUTTON */}
-
-            <button
-              disabled={loading}
+            <div
               className="
-                w-full
-                bg-blue-600
-                hover:bg-blue-700
+                bg-gradient-to-r
+                from-blue-600
+                to-blue-500
+                px-5
+                sm:px-8
+                py-7
                 text-white
-                p-3
-                rounded-lg
-                font-semibold
-                transition
-                disabled:bg-gray-400
               "
             >
 
-              {
-                loading
-                  ? "Memproses..."
-                  : "Ambil Antrian"
-              }
+              <h1
+                className="
+                  text-2xl
+                  sm:text-3xl
+                  font-bold
+                "
+              >
 
-            </button>
+                Ambil Antrian
 
-          </form>
+              </h1>
+
+              <p
+                className="
+                  mt-2
+                  text-blue-100
+                  text-sm
+                  sm:text-base
+                "
+              >
+
+                Silahkan pilih jenis layanan untuk mengambil nomor antrian
+
+              </p>
+
+            </div>
+
+            {/* CONTENT */}
+
+            <div
+              className="
+                p-4
+                sm:p-7
+                lg:p-8
+              "
+            >
+
+              <form
+                onSubmit={handleSubmit}
+                className="space-y-7"
+              >
+
+                {/* LAYANAN */}
+
+                <div>
+
+                  <label
+                    className="
+                      block
+                      mb-3
+                      text-sm
+                      font-semibold
+                      text-gray-700
+                    "
+                  >
+
+                    Jenis Layanan
+
+                  </label>
+
+                  <select
+                    value={layananId}
+                    onChange={(e) =>
+                      setLayananId(e.target.value)
+                    }
+                    className="
+                      w-full
+                      h-[54px]
+                      rounded-2xl
+                      border
+                      border-gray-300
+                      bg-white
+                      px-4
+                      text-gray-700
+                      outline-none
+                      transition
+                      focus:ring-4
+                      focus:ring-blue-100
+                      focus:border-blue-500
+                    "
+                    required
+                  >
+
+                    <option value="">
+                      Pilih Layanan
+                    </option>
+
+                    {
+                      layanans.map((item) => (
+
+                        <option
+                          key={item.id}
+                          value={item.id}
+                        >
+
+                          {item.nama_layanan}
+
+                        </option>
+
+                      ))
+                    }
+
+                  </select>
+
+                </div>
+
+                {/* DATA DIRI */}
+
+                <div>
+
+                  <div
+                    className="
+                      flex
+                      items-center
+                      justify-between
+                      mb-5
+                    "
+                  >
+
+                    <div>
+
+                      <h2
+                        className="
+                          text-lg
+                          font-bold
+                          text-gray-800
+                        "
+                      >
+
+                        Data Pemohon
+
+                      </h2>
+
+                      <p
+                        className="
+                          text-sm
+                          text-gray-500
+                          mt-1
+                        "
+                      >
+
+                        Data otomatis diambil dari akun pengguna
+
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                  <div
+                    className="
+                      grid
+                      grid-cols-1
+                      md:grid-cols-2
+                      gap-5
+                    "
+                  >
+
+                    <InputItem
+                      label="NIK"
+                      value={userData?.nik}
+                    />
+
+                    <InputItem
+                      label="Nama Lengkap"
+                      value={userData?.nama_lengkap}
+                    />
+
+                    <InputItem
+                      label="Email"
+                      value={userData?.email}
+                    />
+
+                    <InputItem
+                      label="Nomor HP"
+                      value={userData?.nomor_hp}
+                    />
+
+                    <InputItem
+                      label="Jenis Kelamin"
+                      value={userData?.jenis_kelamin}
+                    />
+
+                    <InputItem
+                      label="Pekerjaan"
+                      value={userData?.pekerjaan}
+                    />
+
+                    <InputItem
+                      label="Kecamatan"
+                      value={userData?.kecamatan}
+                    />
+
+                    <InputItem
+                      label="Nagari"
+                      value={userData?.nagari}
+                    />
+
+                  </div>
+
+                  {/* JORONG */}
+
+                  <div className="mt-5">
+
+                    <InputItem
+                      label="Jorong"
+                      value={userData?.jorong}
+                    />
+
+                  </div>
+
+                </div>
+
+                {/* BUTTON */}
+
+                <div className="pt-2">
+
+                  <button
+                    disabled={
+                      loading || !layananId
+                    }
+                    className="
+                      w-full
+                      h-[56px]
+                      rounded-2xl
+                      bg-blue-600
+                      hover:bg-blue-700
+                      disabled:bg-gray-400
+                      text-white
+                      font-semibold
+                      text-base
+                      transition
+                      shadow-sm
+                    "
+                  >
+
+                    {
+                      loading
+                        ? "Memproses..."
+                        : "Ambil Antrian"
+                    }
+
+                  </button>
+
+                </div>
+
+              </form>
+
+            </div>
+
+          </div>
 
         </div>
 
       </DashboardLayout>
 
     </AuthGuard>
+  )
+}
+
+// =========================
+// INPUT ITEM
+// =========================
+function InputItem({
+
+  label,
+  value
+
+}) {
+
+  return (
+
+    <div>
+
+      <label
+        className="
+          block
+          mb-2
+          text-sm
+          font-medium
+          text-gray-700
+        "
+      >
+
+        {label}
+
+      </label>
+
+      <input
+        type="text"
+        value={value || ""}
+        readOnly
+        className="
+          w-full
+          h-[52px]
+          rounded-2xl
+          border
+          border-gray-200
+          bg-gray-50
+          px-4
+          text-gray-700
+          text-sm
+          outline-none
+        "
+      />
+
+    </div>
   )
 }

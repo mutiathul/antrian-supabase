@@ -1,0 +1,165 @@
+{
+  "kabupaten": {
+    "id": "1307",
+    "name": "LIMA PULUH KOTA"
+  },
+  "districts": [
+    {
+      "id": "130701",
+      "name": "PAYAKUMBUH",
+      "villages": [
+        { "id": "130701001", "name": "SUNGAI BARINGIN" },
+        { "id": "130701002", "name": "KOTO BARU SIMALANGGANG" },
+        { "id": "130701003", "name": "SIMALANGGANG" },
+        { "id": "130701004", "name": "KOTO TANGAH SIMALANGGANG" },
+        { "id": "130701005", "name": "TAEH BARUAH" },
+        { "id": "130701006", "name": "PIOBANG" },
+        { "id": "130701007", "name": "TAEH BUKIK" }
+      ]
+    },
+    {
+      "id": "130702",
+      "name": "AKABILURU",
+      "villages": [
+        { "id": "130702001", "name": "KOTO TANGAH BATU HAMPA" },
+        { "id": "130702002", "name": "BATU HAMPA" },
+        { "id": "130702003", "name": "SARIAK LAWEH" },
+        { "id": "130702004", "name": "SUNGAI BALANTIAK" },
+        { "id": "130702005", "name": "SUAYAN" },
+        { "id": "130702006", "name": "PAUAH SANGIK" },
+        { "id": "130702007", "name": "DURIAN GADANG" }
+      ]
+    },
+    {
+      "id": "130703",
+      "name": "LUAK",
+      "villages": [
+        { "id": "130703001", "name": "MUNGO" },
+        { "id": "130703002", "name": "ANDALEH" },
+        { "id": "130703003", "name": "SUNGAI KAMUYANG" },
+        { "id": "130703004", "name": "TANJUANG ARO SIKABU-KABU PD. PANJANG" }
+      ]
+    },
+    {
+      "id": "130704",
+      "name": "LAREH SAGO HALABAN",
+      "villages": [
+        { "id": "130704001", "name": "HALABAN" },
+        { "id": "130704002", "name": "AMPALU" },
+        { "id": "130704003", "name": "TANJUANG GADANG" },
+        { "id": "130704004", "name": "SITANANG" },
+        { "id": "130704005", "name": "BATU PAYUANG" },
+        { "id": "130704006", "name": "LABUAH GUNUANG" },
+        { "id": "130704007", "name": "BALAI PANJANG" },
+        { "id": "130704008", "name": "BUKIK SIKUMPA" }
+      ]
+    },
+    {
+      "id": "130705",
+      "name": "SITUJUAH LIMO NAGARI",
+      "villages": [
+        { "id": "130705001", "name": "SITUJUAH GADANG" },
+        { "id": "130705002", "name": "SITUJUAH BANDA DALAM" },
+        { "id": "130705003", "name": "SITUJUAH BATUA" },
+        { "id": "130705004", "name": "TUNGKA" },
+        { "id": "130705005", "name": "SITUJUAH LADANG LAWEH" }
+      ]
+    },
+    {
+      "id": "130706",
+      "name": "HARAU",
+      "villages": [
+        { "id": "130706001", "name": "TARAM" },
+        { "id": "130706002", "name": "BUKIK LIMBUKU" },
+        { "id": "130706003", "name": "PILUBANG" },
+        { "id": "130706004", "name": "BATU BALANG" },
+        { "id": "130706005", "name": "KOTO TUO" },
+        { "id": "130706006", "name": "LUBUAK BATINGKOK" },
+        { "id": "130706007", "name": "GURUN" },
+        { "id": "130706008", "name": "SARILAMAK" },
+        { "id": "130706009", "name": "TARANTANG" },
+        { "id": "130706010", "name": "SOLOK BIO-BIO" },
+        { "id": "130706011", "name": "HARAU" }
+      ]
+    },
+    {
+      "id": "130707",
+      "name": "GUGUAK",
+      "villages": [
+        { "id": "130707001", "name": "KUBANG" },
+        { "id": "130707002", "name": "SIMPANG SUGIRAN" },
+        { "id": "130707003", "name": "SUNGAI TALANG" },
+        { "id": "130707004", "name": "GUGUAK VIII KOTO" },
+        { "id": "130707005", "name": "VII KOTO TALAGO" }
+      ]
+    },
+    {
+      "id": "130708",
+      "name": "MUNGKA",
+      "villages": [
+        { "id": "130708001", "name": "JOPANG MANGANTI" },
+        { "id": "130708002", "name": "MUNGKA" },
+        { "id": "130708003", "name": "TALANG MAUA" },
+        { "id": "130708004", "name": "SIMPANG KAPUAK" },
+        { "id": "130708005", "name": "SUNGAI ANTUAN" }
+      ]
+    },
+    {
+      "id": "130709",
+      "name": "SULIKI",
+      "villages": [
+        { "id": "130709001", "name": "KURAI" },
+        { "id": "130709002", "name": "SULIKI" },
+        { "id": "130709003", "name": "LIMBANANG" },
+        { "id": "130709004", "name": "SUNGAI RIMBANG" },
+        { "id": "130709005", "name": "TANJUANG BUNGO" },
+        { "id": "130709006", "name": "ANDIANG" }
+      ]
+    },
+    {
+      "id": "130710",
+      "name": "BUKIK BARISAN",
+      "villages": [
+        { "id": "130710001", "name": "KOTO TANGAH" },
+        { "id": "130710002", "name": "BANJA LAWEH" },
+        { "id": "130710003", "name": "MAEK" },
+        { "id": "130710004", "name": "SUNGAI NANIANG" },
+        { "id": "130710005", "name": "BARUAH GUNUANG" }
+      ]
+    },
+    {
+      "id": "130711",
+      "name": "GUNUANG OMEH",
+      "villages": [
+        { "id": "130711001", "name": "PANDAM GADANG" },
+        { "id": "130711002", "name": "TALANG ANAU" },
+        { "id": "130711003", "name": "KOTO TINGGI" }
+      ]
+    },
+    {
+      "id": "130712",
+      "name": "KAPUR IX",
+      "villages": [
+        { "id": "130712001", "name": "KOTO LAMO" },
+        { "id": "130712002", "name": "LUBUAK ALAI" },
+        { "id": "130712003", "name": "MUARO PAITI" },
+        { "id": "130712004", "name": "KOTO BANGUN" },
+        { "id": "130712005", "name": "DURIAN TINGGI" },
+        { "id": "130712006", "name": "SIALANG" },
+        { "id": "130712007", "name": "GALUGUA" }
+      ]
+    },
+    {
+      "id": "130713",
+      "name": "PANGKALAN KOTO BARU",
+      "villages": [
+        { "id": "130713001", "name": "KOTO ALAM" },
+        { "id": "130713002", "name": "MANGGILANG" },
+        { "id": "130713003", "name": "PANGKALAN" },
+        { "id": "130713004", "name": "GUNUANG MALINTANG" },
+        { "id": "130713005", "name": "TANJUANG BALIK" },
+        { "id": "130713006", "name": "TANJUANG PAUAH" }
+      ]
+    }
+  ]
+}
