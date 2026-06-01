@@ -309,30 +309,46 @@ export default function DashboardPetugas(){
   // =========================
   // SELESAI
   // =========================
-  async function selesaiAntrian(id){
+ async function selesaiAntrian(id){
 
-    const { error }
-      = await supabase
+  // =========================
+  // SESSION PETUGAS
+  // =========================
+  const {
+    data:{session}
+  } = await supabase.auth.getSession()
 
-      .from("antrians")
+  if(!session){
 
-      .update({
-
-        status:"diterima"
-
-      })
-
-      .eq("id", id)
-
-    if(error){
-
-      alert(error.message)
-
-      return
-    }
-
-    getAntrians(userData.loket)
+    alert("Session tidak ditemukan")
+    return
   }
+
+  // =========================
+  // UPDATE
+  // =========================
+  const { error } = await supabase
+
+    .from("antrians")
+
+    .update({
+
+      status:"selesai",
+
+      //petugas_id: session.user.id
+
+    })
+
+    .eq("id", id)
+
+  if(error){
+
+    alert(error.message)
+    return
+  }
+
+  alert("Antrian selesai")
+}
 
   // =========================
   // APPROVE FO

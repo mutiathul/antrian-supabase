@@ -2,6 +2,20 @@
 
 import Link from "next/link"
 
+import { usePathname }
+from "next/navigation"
+
+import {
+
+  LayoutDashboard,
+  Users,
+  FileText,
+  ClipboardList,
+  UserCog,
+  Clock3
+
+} from "lucide-react"
+
 export default function Sidebar({
 
   role,
@@ -10,206 +24,382 @@ export default function Sidebar({
 
 }){
 
+  const pathname = usePathname()
+
+  // =========================
+  // ACTIVE MENU
+  // =========================
+  function menuClass(path){
+
+    return `
+
+      flex
+      items-center
+      gap-3
+
+      px-4
+      py-3
+
+      rounded-2xl
+
+      transition-all
+      duration-200
+
+      text-sm
+      sm:text-[15px]
+
+      font-medium
+
+      ${
+        pathname === path
+
+        ? `
+          bg-white
+          text-blue-700
+          shadow-sm
+        `
+
+        : `
+          text-blue-100
+          hover:bg-blue-600
+          hover:text-white
+        `
+      }
+
+    `
+  }
+
   return(
 
     <>
 
+      {/* ========================= */}
       {/* BACKDROP MOBILE */}
+      {/* ========================= */}
 
       {
         sidebarOpen && (
 
           <div
             className="
-              fixed inset-0 bg-black/50 z-40
-              md:hidden
+              fixed
+              inset-0
+              bg-black/50
+              backdrop-blur-sm
+              z-40
+              lg:hidden
             "
-            onClick={()=>setSidebarOpen(false)}
+            onClick={()=>
+              setSidebarOpen(false)
+            }
           />
 
         )
       }
 
+      {/* ========================= */}
       {/* SIDEBAR */}
+      {/* ========================= */}
 
-      <div
+      <aside
         className={`
 
-          fixed md:static top-0 left-0 z-50
+          fixed
+          top-0
+          left-0
+          z-50
 
-          h-screen w-64
+          h-screen
+          w-[280px]
 
-          bg-blue-700 text-white
+          bg-gradient-to-b
+          from-blue-700
+          via-blue-700
+          to-blue-800
 
-          transform transition-transform duration-300
+          text-white
 
-          flex flex-col
+          border-r
+          border-blue-600
 
-          ${sidebarOpen
+          shadow-2xl
+
+          transform
+          transition-transform
+          duration-300
+
+          flex
+          flex-col
+
+          overflow-hidden
+
+          ${
+            sidebarOpen
+
             ? "translate-x-0"
-            : "-translate-x-full md:translate-x-0"
+
+            : "-translate-x-full lg:translate-x-0"
           }
 
         `}
       >
 
+        {/* ========================= */}
         {/* HEADER */}
+        {/* ========================= */}
 
-        <div className="p-5 border-b border-blue-500">
+        <div
+          className="
+            h-[80px]
+            px-6
+            flex
+            items-center
+            border-b
+            border-blue-600
+            shrink-0
+          "
+        >
 
-          <h1 className="text-2xl font-bold">
+          <div>
 
-            Sistem Antrian
+            <h1
+              className="
+                text-2xl
+                font-extrabold
+                tracking-wide
+              "
+            >
 
-          </h1>
+              E-Antrian
 
-          <p className="text-sm text-blue-100 mt-1">
+            </h1>
 
-            Disdukcapil
+            <p
+              className="
+                text-sm
+                text-blue-100
+                mt-1
+              "
+            >
 
-          </p>
+              Disdukcapil
+
+            </p>
+
+          </div>
 
         </div>
 
+        {/* ========================= */}
         {/* MENU */}
+        {/* ========================= */}
 
-        <div className="flex-1 flex flex-col p-3 gap-2 overflow-y-auto">
+        <div
+          className="
+            flex-1
+            overflow-y-auto
+            px-4
+            py-5
+          "
+        >
 
-          {/* ========================= */}
-          {/* ADMIN */}
-          {/* ========================= */}
+          <div className="space-y-2">
 
-          {
-            role === "admin" && (
-              <>
+            {/* ========================= */}
+            {/* ADMIN */}
+            {/* ========================= */}
 
-                <Link
-                  href="/admin/dashboard"
-                  className="
-                    hover:bg-blue-800
-                    p-3
-                    rounded-lg
-                    transition
-                  "
-                >
-                  Dashboard
-                </Link>
+            {
+              role === "admin" && (
+                <>
 
-                <Link
-                  href="/admin/layanan"
-                  className="
-                    hover:bg-blue-800
-                    p-3
-                    rounded-lg
-                    transition
-                  "
-                >
-                  Kelola Layanan
-                </Link>
+                  <Link
+                    href="/admin/dashboard"
+                    className={
+                      menuClass(
+                        "/admin/dashboard"
+                      )
+                    }
+                  >
 
-                <Link
-                  href="/admin/petugas"
-                  className="
-                    hover:bg-blue-800
-                    p-3
-                    rounded-lg
-                    transition
-                  "
-                >
-                  Kelola Petugas
-                </Link>
+                    <LayoutDashboard size={20} />
 
-                <Link
-                  href="/admin/rekapan"
-                  className="
-                    hover:bg-blue-800
-                    p-3
-                    rounded-lg
-                    transition
-                  "
-                >
-                  Rekapan
-                </Link>
+                    Dashboard
 
-              </>
-            )
-          }
+                  </Link>
 
-          {/* ========================= */}
-          {/* PETUGAS */}
-          {/* ========================= */}
+                  <Link
+                    href="/admin/layanan"
+                    className={
+                      menuClass(
+                        "/admin/layanan"
+                      )
+                    }
+                  >
 
-          {
-            role === "petugas" && (
-              <>
+                    <ClipboardList size={20} />
 
-                <Link
-                  href="/petugas/dashboard"
-                  className="
-                    hover:bg-blue-800
-                    p-3
-                    rounded-lg
-                    transition
-                  "
-                >
-                  Dashboard
-                </Link>
+                    Kelola Layanan
 
-              </>
-            )
-          }
+                  </Link>
 
-          {/* ========================= */}
-          {/* MASYARAKAT */}
-          {/* ========================= */}
+                  <Link
+                    href="/admin/petugas"
+                    className={
+                      menuClass(
+                        "/admin/petugas"
+                      )
+                    }
+                  >
 
-          {
-            role === "masyarakat" && (
-              <>
+                    <UserCog size={20} />
 
-                <Link
-                  href="/user/dashboard"
-                  className="
-                    hover:bg-blue-800
-                    p-3
-                    rounded-lg
-                    transition
-                  "
-                >
-                  Dashboard
-                </Link>
+                    Kelola Petugas
 
-                <Link
-                  href="/user/ambil-antrian"
-                  className="
-                    hover:bg-blue-800
-                    p-3
-                    rounded-lg
-                    transition
-                  "
-                >
-                  Ambil Antrian
-                </Link>
+                  </Link>
 
-                <Link
-                  href="/user/riwayat"
-                  className="
-                    hover:bg-blue-800
-                    p-3
-                    rounded-lg
-                    transition
-                  "
-                >
-                  Riwayat
-                </Link>
+                  <Link
+                    href="/admin/rekapan"
+                    className={
+                      menuClass(
+                        "/admin/rekapan"
+                      )
+                    }
+                  >
 
-              </>
-            )
-          }
+                    <FileText size={20} />
+
+                    Rekapan
+
+                  </Link>
+
+                </>
+              )
+            }
+
+            {/* ========================= */}
+            {/* PETUGAS */}
+            {/* ========================= */}
+
+            {
+              role === "petugas" && (
+                <>
+
+                  <Link
+                    href="/petugas/dashboard"
+                    className={
+                      menuClass(
+                        "/petugas/dashboard"
+                      )
+                    }
+                  >
+
+                    <LayoutDashboard size={20} />
+
+                    Dashboard
+
+                  </Link>
+
+                  <Link
+  href="/petugas/riwayat"
+  className={
+    menuClass(
+      "/petugas/riwayat"
+    )
+  }
+>
+
+  <Clock3 size={20} />
+
+  Riwayat Penyelesaian
+
+</Link>
+
+                </>
+              )
+            }
+
+            {/* ========================= */}
+            {/* MASYARAKAT */}
+            {/* ========================= */}
+
+            {
+              role === "masyarakat" && (
+                <>
+
+                  <Link
+                    href="/user/dashboard"
+                    className={
+                      menuClass(
+                        "/user/dashboard"
+                      )
+                    }
+                  >
+
+                    <LayoutDashboard size={20} />
+
+                    Dashboard
+
+                  </Link>
+
+                  <Link
+                    href="/user/ambil-antrian"
+                    className={
+                      menuClass(
+                        "/user/ambil-antrian"
+                      )
+                    }
+                  >
+
+                    <Users size={20} />
+
+                    Ambil Antrian
+
+                  </Link>
+
+                  <Link
+                    href="/user/riwayat"
+                    className={
+                      menuClass(
+                        "/user/riwayat"
+                      )
+                    }
+                  >
+
+                    <Clock3 size={20} />
+
+                    Riwayat
+
+                  </Link>
+
+                </>
+              )
+            }
+
+          </div>
 
         </div>
 
-      </div>
+        {/* ========================= */}
+        {/* FOOTER */}
+        {/* ========================= */}
+
+        <div
+          className="
+            border-t
+            border-blue-600
+            p-4
+            text-xs
+            text-blue-200
+            shrink-0
+          "
+        >
+
+          © 2026 Sistem Antrian
+
+        </div>
+
+      </aside>
 
     </>
   )

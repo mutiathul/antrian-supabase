@@ -2,13 +2,21 @@
 
 import { useState } from "react"
 
-import { supabase } from "../../../lib/supabaseClient"
+import { supabase }
+from "../../../lib/supabaseClient"
 
-import { useRouter } from "next/navigation"
+import { useRouter }
+from "next/navigation"
 
-import Sidebar from "../Sidebar"
+import Sidebar
+from "../Sidebar"
 
-import { Menu } from "lucide-react"
+import {
+
+  Menu,
+  LogOut
+
+} from "lucide-react"
 
 export default function DashboardLayout({
 
@@ -20,23 +28,30 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen]
     = useState(false)
 
-    const router = useRouter()
-    async function handleLogout(){
+  const router = useRouter()
 
-  const konfirmasi = confirm(
-    "Yakin ingin logout?"
-  )
+  // =========================
+  // LOGOUT
+  // =========================
+  async function handleLogout(){
 
-  if(!konfirmasi) return
+    const konfirmasi = confirm(
+      "Yakin ingin logout?"
+    )
 
-  await supabase.auth.signOut()
+    if(!konfirmasi) return
 
-  router.replace("/login")
-}
+    await supabase.auth.signOut()
+
+    router.replace("/login")
+  }
 
   return(
 
-    <div className="flex bg-gray-100 min-h-screen">
+    <div className="
+      min-h-screen
+      bg-gray-100
+    ">
 
       {/* SIDEBAR */}
 
@@ -50,70 +65,192 @@ export default function DashboardLayout({
 
       />
 
-      {/* CONTENT */}
+      {/* MAIN CONTENT */}
 
-      <div className="flex-1">
+      <div
+        className="
 
+          lg:ml-[280px]
+
+          min-h-screen
+
+          flex
+          flex-col
+
+        "
+      >
+
+        {/* ========================= */}
         {/* TOPBAR */}
+        {/* ========================= */}
 
-        <div
+        <header
           className="
-            bg-white shadow
-            p-4
-            flex items-center
+
+            sticky
+            top-0
+            z-30
+
+            h-[74px]
+
+            bg-white/90
+            backdrop-blur-md
+
+            border-b
+            border-gray-200
+
+            px-4
+            sm:px-6
+
+            flex
+            items-center
+            justify-between
+
+            shadow-sm
+
           "
         >
 
-          {/* BUTTON MENU */}
+          {/* LEFT */}
+
+          <div className="
+            flex
+            items-center
+            gap-3
+          ">
+
+            {/* MENU MOBILE */}
+
+            <button
+              onClick={()=>
+                setSidebarOpen(true)
+              }
+              className="
+
+                lg:hidden
+
+                w-11
+                h-11
+
+                rounded-xl
+
+                bg-blue-600
+                hover:bg-blue-700
+
+                text-white
+
+                flex
+                items-center
+                justify-center
+
+                transition
+
+              "
+            >
+
+              <Menu size={22} />
+
+            </button>
+
+            {/* TITLE */}
+
+            <div>
+
+              <h1 className="
+                text-lg
+                sm:text-2xl
+                font-bold
+                text-gray-800
+              ">
+
+                Dashboard
+
+              </h1>
+
+              <p className="
+                text-xs
+                sm:text-sm
+                text-gray-500
+                mt-0.5
+              ">
+
+                Sistem Antrian Disdukcapil
+
+              </p>
+
+            </div>
+
+          </div>
+
+          {/* RIGHT */}
 
           <button
-            onClick={()=>setSidebarOpen(true)}
+            onClick={handleLogout}
             className="
-              md:hidden
-              bg-blue-600
+
+              flex
+              items-center
+              gap-2
+
+              bg-red-500
+              hover:bg-red-600
+
               text-white
-              p-2
-              rounded
+
+              px-4
+              sm:px-5
+
+              h-11
+
+              rounded-xl
+
+              text-sm
+              sm:text-base
+
+              font-medium
+
+              transition
+
+              shadow-sm
+
             "
           >
 
-            <Menu size={24} />
+            <LogOut size={18} />
+
+            Logout
 
           </button>
 
-          <div className="flex-1 flex justify-between items-center">
+        </header>
 
-  <h1 className="ml-3 font-bold text-xl">
+        {/* ========================= */}
+        {/* PAGE CONTENT */}
+        {/* ========================= */}
 
-    Dashboard
+        <main
+          className="
 
-  </h1>
+            flex-1
 
-  <button
-    onClick={handleLogout}
-    className="
-      bg-red-500
-      text-white
-      px-4 py-2
-      rounded
-    "
-  >
+            p-4
+            sm:p-6
+            lg:p-8
 
-    Logout
+          "
+        >
 
-  </button>
+          <div className="
+            w-full
+            max-w-[1600px]
+            mx-auto
+          ">
 
-</div>
+            {children}
 
-        </div>
+          </div>
 
-        {/* PAGE */}
-
-        <div className="p-5">
-
-          {children}
-
-        </div>
+        </main>
 
       </div>
 
