@@ -30,7 +30,10 @@ export default function LoginPage(){
       .select('*')
       .eq('email',email)
       .single()
-
+localStorage.setItem(
+  "lastActivity",
+  Date.now()
+)
    if(userData?.role === "admin"){
 
   router.replace("/admin/dashboard")

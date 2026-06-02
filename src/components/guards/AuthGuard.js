@@ -1,9 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-
 import { supabase } from "../../../lib/supabaseClient"
-
 import { useRouter } from "next/navigation"
 
 export default function AuthGuard({
@@ -21,36 +19,102 @@ export default function AuthGuard({
 
     checkUser()
 
+    // =========================
+    // LISTENER SESSION
+    // =========================
+    const {
+      data: { subscription }
+    } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+
+        if (
+          event === "SIGNED_OUT"
+        ) {
+
+          router.replace("/login")
+        }
+
+        if (
+          event === "TOKEN_REFRESHED"
+        ) {
+
+          console.log(
+            "Token berhasil diperbarui"
+          )
+        }
+      }
+    )
+
+    return () => {
+
+      subscription.unsubscribe()
+    }
+
   }, [])
 
   async function checkUser() {
 
     try {
 
-      // ambil session
+      // =========================
+      // AMBIL SESSION
+      // =========================
       const {
         data: { session }
       } = await supabase.auth.getSession()
 
-      // kalau belum login
+      // =========================
+      // BELUM LOGIN
+      // =========================
       if (!session) {
 
         router.replace("/login")
         return
       }
 
-      // ambil data user
-      const { data: userData, error } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", session.user.id)
-        .single()
-        console.log("SESSION:", session)
-console.log("USER DATA:", userData)
-console.log("ROLE:", userData?.role)
-console.log("ALLOWED:", allowedRole)
+      // =========================
+      // AMBIL USER
+      // =========================
+      const {
+        data: userData,
+        error
+      } = await supabase
 
-      if (error || !userData) {
+        .from("users")
+
+        .select("*")
+
+        .eq(
+          "id",
+          session.user.id
+        )
+
+        .single()
+
+      console.log(
+        "SESSION:",
+        session
+      )
+
+      console.log(
+        "USER DATA:",
+        userData
+      )
+
+      console.log(
+        "ROLE:",
+        userData?.role
+      )
+
+      console.log(
+        "ALLOWED:",
+        allowedRole
+      )
+
+      if (
+        error ||
+        !userData
+      ) {
 
         console.log(error)
 
@@ -58,8 +122,13 @@ console.log("ALLOWED:", allowedRole)
         return
       }
 
-      // cek role
-      if (userData.role !== allowedRole) {
+      // =========================
+      // CEK ROLE
+      // =========================
+      if (
+        userData.role
+        !== allowedRole
+      ) {
 
         router.replace("/login")
         return
@@ -79,22 +148,40 @@ console.log("ALLOWED:", allowedRole)
     }
   }
 
-  // loading screen
+  // =========================
+  // LOADING
+  // =========================
   if (loading) {
 
     return (
 
-      <div className="min-h-screen flex items-center justify-center">
+      <div
+        className="
+          min-h-screen
+          flex
+          items-center
+          justify-center
+        "
+      >
 
-        <h1 className="text-2xl font-bold">
+        <h1
+          className="
+            text-2xl
+            font-bold
+          "
+        >
+
           Loading...
+
         </h1>
 
       </div>
     )
   }
 
-  // kalau tidak diizinkan
+  // =========================
+  // TIDAK DIIZINKAN
+  // =========================
   if (!allowed) {
 
     return null

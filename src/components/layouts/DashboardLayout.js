@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 import { supabase }
 from "../../../lib/supabaseClient"
@@ -29,7 +29,64 @@ export default function DashboardLayout({
     = useState(false)
 
   const router = useRouter()
+useEffect(() => {
 
+  let timeout
+
+  const resetTimer = () => {
+
+    clearTimeout(timeout)
+
+    timeout = setTimeout(
+      async () => {
+
+        await supabase.auth.signOut()
+
+        router.replace("/login")
+
+      },
+      60 * 60 * 1000
+    )
+  }
+
+  window.addEventListener(
+    "mousemove",
+    resetTimer
+  )
+
+  window.addEventListener(
+    "keydown",
+    resetTimer
+  )
+
+  window.addEventListener(
+    "click",
+    resetTimer
+  )
+
+  resetTimer()
+
+  return () => {
+
+    clearTimeout(timeout)
+
+    window.removeEventListener(
+      "mousemove",
+      resetTimer
+    )
+
+    window.removeEventListener(
+      "keydown",
+      resetTimer
+    )
+
+    window.removeEventListener(
+      "click",
+      resetTimer
+    )
+  }
+
+}, [])
   // =========================
   // LOGOUT
   // =========================

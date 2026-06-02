@@ -27,6 +27,8 @@ export default function DashboardPetugas(){
   const [loading, setLoading]
     = useState(true)
 
+  const [now, setNow] = useState(Date.now())
+
   // =========================
   // GET USER LOGIN
   // =========================
@@ -102,6 +104,19 @@ export default function DashboardPetugas(){
         "diproses"
       ])
   }
+
+
+  useEffect(() => {
+
+  const interval = setInterval(() => {
+
+    setNow(Date.now())
+
+  }, 1000)
+
+  return () => clearInterval(interval)
+
+}, [])
 
   // =========================
   // GET ANTRIANS
@@ -254,57 +269,60 @@ export default function DashboardPetugas(){
   // =========================
   // PROSES ANTRIAN
   // =========================
-  async function prosesAntrian(item){
+ async function prosesAntrian(item){
 
-    // jika diproses petugas lain
-    if(
+  // jika diproses petugas lain
+  if(
 
-      item.diproses_oleh
+    item.diproses_oleh
 
-      &&
+    &&
 
-      item.diproses_oleh
-      !== userData.id
+    item.diproses_oleh
+    !== userData.id
 
-    ){
+  ){
 
-      alert(
-        "Antrian sedang diproses petugas lain"
-      )
+    alert(
+      "Antrian sedang diproses petugas lain"
+    )
 
-      return
-    }
-
-    const { error }
-      = await supabase
-
-      .from("antrians")
-
-      .update({
-
-        status:"diproses",
-
-        diproses_oleh:
-          userData.id
-
-      })
-
-      .eq("id", item.id)
-
-      .eq(
-        "status",
-        "menunggu"
-      )
-
-    if(error){
-
-      alert(error.message)
-
-      return
-    }
-
-    getAntrians(userData.loket)
+    return
   }
+
+  const { error }
+    = await supabase
+
+    .from("antrians")
+
+    .update({
+
+      status:"diproses",
+
+      diproses_oleh:
+        userData.id,
+
+      waktu_mulai_proses:
+        new Date().toISOString()
+
+    })
+
+    .eq("id", item.id)
+
+    .eq(
+      "status",
+      "menunggu"
+    )
+
+  if(error){
+
+    alert(error.message)
+
+    return
+  }
+
+  getAntrians(userData.loket)
+}
 
   // =========================
   // SELESAI
@@ -325,6 +343,50 @@ export default function DashboardPetugas(){
   }
 
   // =========================
+  // AMBIL DATA ANTRIAN
+  // =========================
+  const { data: antrian } =
+    await supabase
+
+      .from("antrians")
+
+      .select(`
+        waktu_mulai_proses
+      `)
+
+      .eq("id", id)
+
+      .single()
+
+  // =========================
+  // HITUNG DURASI
+  // =========================
+  const waktuSelesai =
+    new Date()
+
+  let durasiMenit = null
+
+  if(antrian?.waktu_mulai_proses){
+
+    const waktuMulai =
+      new Date(
+        antrian.waktu_mulai_proses
+      )
+
+    const selisihMs =
+      waktuSelesai - waktuMulai
+
+    durasiMenit =
+      Number(
+        (
+          selisihMs /
+          1000 /
+          60
+        ).toFixed(2)
+      )
+  }
+
+  // =========================
   // UPDATE
   // =========================
   const { error } = await supabase
@@ -335,7 +397,11 @@ export default function DashboardPetugas(){
 
       status:"selesai",
 
-      //petugas_id: session.user.id
+      waktu_selesai:
+        waktuSelesai.toISOString(),
+
+      durasi_pelayanan_menit:
+        durasiMenit
 
     })
 
@@ -535,7 +601,37 @@ masuk ke ${loketTujuan}`
 
     getAntrians(userData.loket)
   }
+function getDurasiBerjalan(waktuMulai){
 
+  if(!waktuMulai) return "-"
+
+  const mulai = new Date(waktuMulai)
+
+  const selisih =
+    now - mulai.getTime()
+
+  const jam =
+    Math.floor(
+      selisih / 1000 / 60 / 60
+    )
+
+  const menit =
+    Math.floor(
+      (selisih / 1000 / 60) % 60
+    )
+
+  const detik =
+    Math.floor(
+      (selisih / 1000) % 60
+    )
+
+  if(jam > 0){
+
+    return `${jam}j ${menit}m ${detik}d`
+  }
+
+  return `${menit}m ${detik}d`
+}
   // =========================
   // COUNT
   // =========================
@@ -653,23 +749,27 @@ masuk ke ${loketTujuan}`
 
                 <tr>
 
-                  <th className="p-4 text-left">
-                    Nomor
-                  </th>
+  <th className="p-4 text-left">
+    Nomor
+  </th>
 
-                  <th className="p-4 text-left">
-                    Nama
-                  </th>
+  <th className="p-4 text-left">
+    Nama
+  </th>
 
-                  <th className="p-4 text-left">
-                    Status
-                  </th>
+  <th className="p-4 text-left">
+    Status
+  </th>
 
-                  <th className="p-4 text-left">
-                    Aksi
-                  </th>
+  <th className="p-4 text-left">
+    Durasi
+  </th>
 
-                </tr>
+  <th className="p-4 text-left">
+    Aksi
+  </th>
+
+</tr>
 
               </thead>
 
@@ -748,6 +848,32 @@ masuk ke ${loketTujuan}`
                           </span>
 
                         </td>
+                        <td className="p-4">
+
+  {
+    item.status === "diproses"
+
+      ? (
+
+        <span className="
+          font-semibold
+          text-orange-600
+        ">
+
+          ⏱ {
+            getDurasiBerjalan(
+              item.waktu_mulai_proses
+            )
+          }
+
+        </span>
+
+      )
+
+      : "-"
+  }
+
+</td>
 
                         <td className="p-4">
 
