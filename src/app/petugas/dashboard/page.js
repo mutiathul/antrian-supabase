@@ -477,6 +477,15 @@ else if(
 
   kodeAntrian = "AK"
 }
+// =========================
+// AKTA PERKAWINAN
+// =========================
+else if(
+  namaLayanan === "Akta Perkawinan"
+){
+
+  kodeAntrian = "AP"
+}
 
 // =========================
 // DEFAULT

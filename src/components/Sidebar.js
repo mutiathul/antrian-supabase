@@ -12,9 +12,14 @@ import {
   FileText,
   ClipboardList,
   UserCog,
-  Clock3
+  Clock3,
+  ChevronDown,
+  ChevronRight,
+  BarChart3
 
 } from "lucide-react"
+
+import { useState } from "react"
 
 export default function Sidebar({
 
@@ -25,6 +30,33 @@ export default function Sidebar({
 }){
 
   const pathname = usePathname()
+
+  // const [openRekapan,setOpenRekapan]
+  // = useState(
+
+  //   pathname.includes(
+  //     "/admin/rekapan"
+  //   )
+
+  // )
+
+ const [openPelayanan,setOpenPelayanan]
+= useState(
+
+  pathname.includes(
+    "/admin/rekapan"
+  )
+
+)
+
+const [openInternal,setOpenInternal]
+= useState(
+
+  pathname.includes(
+    "/admin/internal"
+  )
+
+)
 
   // =========================
   // ACTIVE MENU
@@ -212,53 +244,241 @@ export default function Sidebar({
             {
               role === "admin" && (
                 <>
+{/* DASHBOARD */}
 
-                  <Link
-                    href="/admin/dashboard"
-                    className={
-                      menuClass(
-                        "/admin/dashboard"
-                      )
-                    }
-                  >
+<Link
+  href="/admin/dashboard"
+  className={
+    menuClass(
+      "/admin/dashboard"
+    )
+  }
+>
 
-                    <LayoutDashboard size={20} />
+  <LayoutDashboard size={20} />
 
-                    Dashboard
+  Dashboard
 
-                  </Link>
+</Link>
 
-                  <Link
-                    href="/admin/layanan"
-                    className={
-                      menuClass(
-                        "/admin/layanan"
-                      )
-                    }
-                  >
 
-                    <ClipboardList size={20} />
+{/* ========================= */}
+{/* REKAPAN PELAYANAN */}
+{/* ========================= */}
 
-                    Kelola Layanan
+<button
 
-                  </Link>
+  onClick={()=>
+    setOpenPelayanan(
+      !openPelayanan
+    )
+  }
 
-                  <Link
-                    href="/admin/petugas"
-                    className={
-                      menuClass(
-                        "/admin/petugas"
-                      )
-                    }
-                  >
+  className="
+    w-full
+    flex
+    items-center
+    justify-between
 
-                    <UserCog size={20} />
+    px-4
+    py-3
 
-                    Kelola Petugas
+    rounded-2xl
 
-                  </Link>
+    text-blue-100
 
-                  <Link
+    hover:bg-blue-600
+  "
+>
+
+  <div className="flex items-center gap-3 whitespace-nowrap">
+
+    <FileText size={20} />
+
+    Rekapan Pelayanan
+
+  </div>
+
+  {
+    openPelayanan
+
+    ? <ChevronDown size={18} />
+
+    : <ChevronRight size={18} />
+  }
+
+</button>
+
+{
+  openPelayanan && (
+
+    <div className="ml-10 space-y-1">
+
+      <Link
+        href="/admin/rekapan/by-name"
+        className={
+          menuClass(
+            "/admin/rekapan/by-name"
+          )
+        }
+      >
+
+        By Name
+
+      </Link>
+
+      <Link
+        href="/admin/rekapan/by-address"
+        className={
+          menuClass(
+            "/admin/rekapan/by-address"
+          )
+        }
+      >
+
+        By Address
+
+      </Link>
+
+    </div>
+
+  )
+}
+
+
+{/* ========================= */}
+{/* REKAPAN INTERNAL */}
+{/* ========================= */}
+
+<button
+
+  onClick={()=>
+    setOpenInternal(
+      !openInternal
+    )
+  }
+
+  className="
+    w-full
+    flex
+    items-center
+    justify-between
+
+    px-4
+    py-3
+
+    rounded-2xl
+
+    text-blue-100
+
+    hover:bg-blue-600
+  "
+>
+
+  <div className="flex items-center gap-3">
+
+    <BarChart3 size={20} />
+
+    Rekapan Internal
+
+  </div>
+
+  {
+    openInternal
+
+    ? <ChevronDown size={18} />
+
+    : <ChevronRight size={18} />
+  }
+
+</button>
+
+{
+  openInternal && (
+
+    <div className="ml-10 space-y-1">
+
+      <Link
+        href="/admin/internal/produktivitas"
+        className={
+          menuClass(
+            "/admin/internal/produktivitas"
+          )
+        }
+      >
+
+        Produktivitas
+
+      </Link>
+
+      <Link
+        href="/admin/internal/rata-rata"
+        className={
+          menuClass(
+            "/admin/internal/rata-rata"
+          )
+        }
+      >
+
+        Rata-rata Waktu
+
+      </Link>
+
+      <Link
+        href="/admin/internal/kinerja"
+        className={
+          menuClass(
+            "/admin/internal/kinerja"
+          )
+        }
+      >
+
+        Grafik Kinerja
+
+      </Link>
+
+    </div>
+
+  )
+}
+
+
+{/* MASTER LAYANAN */}
+
+<Link
+  href="/admin/layanan"
+  className={
+    menuClass(
+      "/admin/layanan"
+    )
+  }
+>
+
+  <ClipboardList size={20} />
+
+  Kelola Layanan
+
+</Link>
+
+
+{/* PETUGAS */}
+
+<Link
+  href="/admin/petugas"
+  className={
+    menuClass(
+      "/admin/petugas"
+    )
+  }
+>
+
+  <UserCog size={20} />
+
+  Kelola Petugas
+
+</Link>
+
+                  {/* <Link
                     href="/admin/rekapan"
                     className={
                       menuClass(
@@ -271,7 +491,7 @@ export default function Sidebar({
 
                     Rekapan
 
-                  </Link>
+                  </Link> */}
 
                 </>
               )

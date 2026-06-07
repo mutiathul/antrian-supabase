@@ -2,292 +2,270 @@
 
 import { useEffect, useState } from "react"
 
-import { supabase } from "../../../../lib/supabaseClient"
+import { supabase }
+from "../../../../lib/supabaseClient"
 
-import DashboardLayout from "../../../components/layouts/DashboardLayout"
+import DashboardLayout
+from "../../../components/layouts/DashboardLayout"
 
-import AuthGuard from "../../../components/guards/AuthGuard"
+import AuthGuard
+from "../../../components/guards/AuthGuard"
 
-export default function LayananPage() {
+export default function MasterLayananPage(){
 
-  const [layanans, setLayanans] = useState([])
+  const [layanans,setLayanans]
+    = useState([])
 
-  const [nama, setNama] = useState("")
-  const [kode, setKode] = useState("")
-  const [limit, setLimit] = useState(50)
+  const [loading,setLoading]
+    = useState(true)
 
-  const [editId, setEditId] = useState(null)
+  const [showModal,setShowModal]
+    = useState(false)
 
-  useEffect(() => {
+  const [editId,setEditId]
+    = useState(null)
 
-    getLayanan()
+  const [form,setForm]
+    = useState({
 
-  }, [])
+      nama_layanan:"",
 
-  // =========================
-  // GET DATA
-  // =========================
-  async function getLayanan() {
+      kode_layanan:"",
 
-    const { data, error } = await supabase
+      loket_tujuan:"",
+
+      limit_harian:100,
+
+      status_layanan:true
+    })
+
+  useEffect(()=>{
+
+    getData()
+
+  },[])
+
+  async function getData(){
+
+    setLoading(true)
+
+    const { data,error }
+      = await supabase
+
       .from("layanans")
+
       .select("*")
-      .order("created_at", {
-        ascending: false
-      })
+
+      .order(
+        "nama_layanan",
+        {
+          ascending:true
+        }
+      )
 
     if(error){
 
-      alert(error.message)
+      console.log(error)
+
       return
     }
 
     setLayanans(data || [])
+
+    setLoading(false)
   }
 
-  // =========================
-  // RESET FORM
-  // =========================
-  function resetForm(){
+  async function saveData(){
 
-    setNama("")
-    setKode("")
-    setLimit(50)
+    if(!form.nama_layanan){
 
-    setEditId(null)
-  }
+      alert("Nama layanan wajib diisi")
 
-  // =========================
-  // TAMBAH / UPDATE
-  // =========================
-  async function tambahLayanan(e) {
-
-    e.preventDefault()
-
-    // VALIDASI
-    if(!nama || !kode){
-
-      alert("Semua field wajib diisi")
       return
     }
 
-    // =========================
-    // UPDATE
-    // =========================
     if(editId){
 
-      const { error } = await supabase
+      await supabase
+
         .from("layanans")
-        .update({
-          nama_layanan: nama,
-          kode_layanan: kode,
-          limit_harian: limit
-        })
-        .eq("id", editId)
 
-      if(error){
+        .update(form)
 
-        alert(error.message)
-        return
-      }
+        .eq("id",editId)
 
-      alert("Layanan berhasil diupdate")
+    }else{
 
-      resetForm()
+      await supabase
 
-      getLayanan()
+        .from("layanans")
 
-      return
+        .insert([form])
     }
-
-    // =========================
-    // INSERT
-    // =========================
-    const { error } = await supabase
-      .from("layanans")
-      .insert([
-        {
-          nama_layanan: nama,
-          kode_layanan: kode,
-          limit_harian: limit
-        }
-      ])
-
-    if(error){
-
-      alert(error.message)
-      return
-    }
-
-    alert("Layanan berhasil ditambahkan")
 
     resetForm()
 
-    getLayanan()
+    getData()
   }
 
-  // =========================
-  // EDIT
-  // =========================
-  function editLayanan(item){
-
-    setNama(item.nama_layanan)
-
-    setKode(item.kode_layanan)
-
-    setLimit(item.limit_harian)
+  function editData(item){
 
     setEditId(item.id)
+
+    setForm({
+
+      nama_layanan:
+        item.nama_layanan,
+
+      kode_layanan:
+        item.kode_layanan,
+
+      loket_tujuan:
+        item.loket_tujuan,
+
+      limit_harian:
+        item.limit_harian,
+
+      status_layanan:
+        item.status_layanan
+    })
+
+    setShowModal(true)
   }
 
-  // =========================
-  // HAPUS
-  // =========================
-  async function hapusLayanan(id){
+  async function hapusData(id){
 
-    const konfirmasi = confirm(
-      "Yakin ingin menghapus layanan?"
+    const ok = confirm(
+      "Yakin hapus layanan?"
     )
 
-    if(!konfirmasi) return
+    if(!ok) return
 
-    const { error } = await supabase
+    await supabase
+
       .from("layanans")
+
       .delete()
-      .eq("id", id)
 
-    if(error){
+      .eq("id",id)
 
-      alert(error.message)
-      return
-    }
-
-    alert("Layanan berhasil dihapus")
-
-    getLayanan()
+    getData()
   }
 
-  return (
+  function resetForm(){
+
+    setEditId(null)
+
+    setForm({
+
+      nama_layanan:"",
+
+      kode_layanan:"",
+
+      loket_tujuan:"",
+
+      limit_harian:100,
+
+      status_layanan:true
+    })
+
+    setShowModal(false)
+  }
+
+  return(
 
     <AuthGuard allowedRole="admin">
 
       <DashboardLayout role="admin">
 
-        {/* FORM */}
+        <div className="space-y-6">
 
-        <div className="bg-white p-5 rounded-lg shadow mb-5">
+          {/* HEADER */}
 
-          <h1 className="text-2xl font-bold mb-5">
+          <div className="flex justify-between items-center">
 
-            {
-              editId
-                ? "Edit Layanan"
-                : "Tambah Layanan"
-            }
+            <div>
 
-          </h1>
+              <h1
+                className="
+                  text-3xl
+                  font-bold
+                "
+              >
+                Master Layanan
+              </h1>
 
-          <form
-            onSubmit={tambahLayanan}
-            className="grid md:grid-cols-4 gap-3"
-          >
+              <p className="text-gray-500">
 
-            {/* NAMA */}
+                Kelola layanan Disdukcapil
 
-            <input
-              type="text"
-              placeholder="Nama Layanan"
-              className="border p-3 rounded"
-              value={nama}
-              onChange={(e)=>setNama(e.target.value)}
-              required
-            />
+              </p>
 
-            {/* KODE */}
-
-            <input
-              type="text"
-              placeholder="Kode Layanan"
-              className="border p-3 rounded"
-              value={kode}
-              onChange={(e)=>setKode(e.target.value)}
-              required
-            />
-
-            {/* LIMIT */}
-
-            <input
-              type="number"
-              placeholder="Limit Harian"
-              className="border p-3 rounded"
-              value={limit}
-              onChange={(e)=>setLimit(e.target.value)}
-              required
-            />
-
-            {/* BUTTON */}
+            </div>
 
             <button
-              className="bg-blue-600 text-white rounded p-3"
+
+              onClick={()=>
+                setShowModal(true)
+              }
+
+              className="
+                bg-blue-600
+                text-white
+                px-5
+                py-3
+                rounded-xl
+              "
             >
 
-              {
-                editId
-                  ? "Update Layanan"
-                  : "Tambah"
-              }
+              + Tambah
 
             </button>
 
-          </form>
+          </div>
 
-          {/* BUTTON CANCEL */}
+          {/* TABLE */}
 
-          {
-            editId && (
+          <div
+            className="
+              bg-white
+              rounded-2xl
+              shadow
+              overflow-hidden
+            "
+          >
 
-              <button
-                type="button"
-                onClick={resetForm}
-                className="bg-gray-500 text-white px-5 py-3 rounded mt-3"
+            <table className="w-full">
+
+              <thead
+                className="
+                  bg-gray-100
+                "
               >
-                Batal Edit
-              </button>
-
-            )
-          }
-
-        </div>
-
-        {/* TABLE */}
-
-        <div className="bg-white p-5 rounded-lg shadow">
-
-          <h1 className="text-2xl font-bold mb-5">
-            Data Layanan
-          </h1>
-
-          <div className="overflow-x-auto">
-
-            <table className="w-full border">
-
-              <thead className="bg-gray-100">
 
                 <tr>
 
-                  <th className="border p-3">
-                    Nama
+                  <th className="p-4 text-left">
+                    Nama Layanan
                   </th>
 
-                  <th className="border p-3">
+                  <th className="p-4 text-left">
                     Kode
                   </th>
 
-                  <th className="border p-3">
+                  <th className="p-4 text-left">
+                    Loket
+                  </th>
+
+                  <th className="p-4 text-left">
                     Limit
                   </th>
 
-                  <th className="border p-3">
+                  <th className="p-4 text-left">
+                    Status
+                  </th>
+
+                  <th className="p-4 text-left">
                     Aksi
                   </th>
 
@@ -298,54 +276,110 @@ export default function LayananPage() {
               <tbody>
 
                 {
-                  layanans.length > 0 ? (
+                  loading
+                  ? (
+
+                    <tr>
+
+                      <td
+                        colSpan="6"
+                        className="
+                          p-10
+                          text-center
+                        "
+                      >
+
+                        Loading...
+
+                      </td>
+
+                    </tr>
+
+                  )
+
+                  : layanans.length > 0
+
+                  ? (
 
                     layanans.map((item)=>(
 
-                      <tr key={item.id}>
+                      <tr
+                        key={item.id}
+                        className="border-t"
+                      >
 
-                        {/* NAMA */}
-
-                        <td className="border p-3">
+                        <td className="p-4">
 
                           {item.nama_layanan}
 
                         </td>
 
-                        {/* KODE */}
-
-                        <td className="border p-3 font-bold">
+                        <td className="p-4">
 
                           {item.kode_layanan}
 
                         </td>
 
-                        {/* LIMIT */}
+                        <td className="p-4">
 
-                        <td className="border p-3">
+                          {item.loket_tujuan}
+
+                        </td>
+
+                        <td className="p-4">
 
                           {item.limit_harian}
 
                         </td>
 
-                        {/* AKSI */}
+                        <td className="p-4">
 
-                        <td className="border p-3">
+                          {
+                            item.status_layanan
+                            ? "Aktif"
+                            : "Nonaktif"
+                          }
 
-                          <div className="flex flex-wrap gap-2">
+                        </td>
+
+                        <td className="p-4">
+
+                          <div className="flex gap-2">
 
                             <button
-                              onClick={()=>editLayanan(item)}
-                              className="bg-yellow-500 text-white px-3 py-1 rounded"
+
+                              onClick={()=>
+                                editData(item)
+                              }
+
+                              className="
+                                bg-yellow-500
+                                text-white
+                                px-3 py-2
+                                rounded-lg
+                              "
                             >
+
                               Edit
+
                             </button>
 
                             <button
-                              onClick={()=>hapusLayanan(item.id)}
-                              className="bg-red-500 text-white px-3 py-1 rounded"
+
+                              onClick={()=>
+                                hapusData(item.id)
+                              }
+
+                              className="
+                                bg-red-600
+                                text-white
+                                px-3 py-2
+                                rounded-lg
+                              "
                             >
+
                               Hapus
+
                             </button>
 
                           </div>
@@ -356,15 +390,22 @@ export default function LayananPage() {
 
                     ))
 
-                  ) : (
+                  )
+
+                  : (
 
                     <tr>
 
                       <td
-                        colSpan="4"
-                        className="text-center p-5"
+                        colSpan="6"
+                        className="
+                          p-10
+                          text-center
+                        "
                       >
-                        Belum ada layanan
+
+                        Belum ada data
+
                       </td>
 
                     </tr>
@@ -379,6 +420,158 @@ export default function LayananPage() {
           </div>
 
         </div>
+
+        {/* MODAL */}
+
+        {
+          showModal && (
+
+            <div
+              className="
+                fixed
+                inset-0
+                bg-black/40
+                flex
+                items-center
+                justify-center
+                z-50
+              "
+            >
+
+              <div
+                className="
+                  bg-white
+                  w-full
+                  max-w-lg
+                  rounded-2xl
+                  p-6
+                "
+              >
+
+                <h2
+                  className="
+                    text-xl
+                    font-bold
+                    mb-5
+                  "
+                >
+
+                  {
+                    editId
+                    ? "Edit Layanan"
+                    : "Tambah Layanan"
+                  }
+
+                </h2>
+
+                <div className="space-y-4">
+
+                  <input
+                    placeholder="Nama Layanan"
+                    value={form.nama_layanan}
+                    onChange={(e)=>
+
+                      setForm({
+
+                        ...form,
+
+                        nama_layanan:
+                          e.target.value
+                      })
+
+                    }
+                    className="w-full border p-3 rounded"
+                  />
+
+                  <input
+                    placeholder="Kode Layanan"
+                    value={form.kode_layanan}
+                    onChange={(e)=>
+
+                      setForm({
+
+                        ...form,
+
+                        kode_layanan:
+                          e.target.value
+                      })
+
+                    }
+                    className="w-full border p-3 rounded"
+                  />
+
+                  <input
+                    placeholder="Loket Tujuan"
+                    value={form.loket_tujuan}
+                    onChange={(e)=>
+
+                      setForm({
+
+                        ...form,
+
+                        loket_tujuan:
+                          e.target.value
+                      })
+
+                    }
+                    className="w-full border p-3 rounded"
+                  />
+
+                  <input
+                    type="number"
+                    placeholder="Limit Harian"
+                    value={form.limit_harian}
+                    onChange={(e)=>
+
+                      setForm({
+
+                        ...form,
+
+                        limit_harian:
+                          e.target.value
+                      })
+
+                    }
+                    className="w-full border p-3 rounded"
+                  />
+
+                </div>
+
+                <div className="flex justify-end gap-3 mt-6">
+
+                  <button
+                    onClick={resetForm}
+                    className="
+                      px-4
+                      py-2
+                      bg-gray-300
+                      rounded-lg
+                    "
+                  >
+                    Batal
+                  </button>
+
+                  <button
+                    onClick={saveData}
+                    className="
+                      px-4
+                      py-2
+                      bg-blue-600
+                      text-white
+                      rounded-lg
+                    "
+                  >
+                    Simpan
+                  </button>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          )
+        }
 
       </DashboardLayout>
 

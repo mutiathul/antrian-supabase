@@ -362,6 +362,17 @@ Jorong ${userData?.jorong}
 
           alamat:
             alamatLengkap,
+             // ======================
+    // ALAMAT TERPISAH
+    // ======================
+    kecamatan:
+      userData?.kecamatan,
+
+    nagari:
+      userData?.nagari,
+
+    jorong:
+      userData?.jorong,
 
           status:status,
 
