@@ -5,7 +5,11 @@ import { supabase } from "../../../../lib/supabaseClient"
 
 import DashboardLayout from "../../../components/layouts/DashboardLayout"
 import AuthGuard from "../../../components/guards/AuthGuard"
+import jsPDF from "jspdf"
+import autoTable from "jspdf-autotable"
 
+import * as XLSX from "xlsx"
+import { saveAs } from "file-saver"
 import { Bar, Line, Pie } from "react-chartjs-2"
 import {
   Chart as ChartJS,
@@ -41,39 +45,55 @@ export default function DashboardAdminPage() {
   async function fetchData() {
     setLoading(true)
 
-    const { data, error } = await supabase
-      .from("antrians")
-      .select(`
-        id,
-        loket,
-        created_at,
-        waktu_mulai_proses,
-        waktu_selesai,
-        status,
-        jenis_kelamin,
-        kecamatan,
-        nagari,
-        layanans (nama_layanan)
-      `)
-      .eq("status", "selesai")
+   const { data, error } = await supabase
+  .from("antrians")
+  .select(`
+    id,
+    loket,
+    created_at,
+    waktu_mulai_proses,
+    waktu_selesai,
+    status,
+    layanans (nama_layanan),
+    users (
+      nik,
+      nama_lengkap,
+      nomor_hp,
+      email,
+      pekerjaan,
+      jenis_kelamin,
+      kecamatan,
+      nagari,
+      jorong
+    )
+  `)
+  .eq("status", "selesai")
 
     if (error) { console.log(error); setLoading(false); return }
 
-    const cleaned = (data || []).map(item => {
-      const start = new Date(item.waktu_mulai_proses || item.created_at)
-      const end = new Date(item.waktu_selesai || item.created_at)
-      const diff = (end - start) / 60000
+   const cleaned = (data || []).map(item => {
+  const start = new Date(item.waktu_mulai_proses || item.created_at)
+  const end = new Date(item.waktu_selesai || item.created_at)
+  const diff = (end - start) / 60000
 
-      return {
-        layanan: item.layanans?.nama_layanan || "Unknown",
-        loket: item.loket || "Unknown",
-        waktu: diff < 0 ? 0 : diff,
-        created_at: item.created_at,
-        jenis_kelamin: item.jenis_kelamin || "Unknown",
-        kecamatan: item.kecamatan || "Unknown",
-        nagari: item.nagari || "Unknown"
-      }
-    })
+  const u = item.users || {}
+
+  return {
+    layanan: item.layanans?.nama_layanan || "Unknown",
+    loket: item.loket || "Unknown",
+    waktu: diff < 0 ? 0 : diff,
+    created_at: item.created_at,
+    nik: u.nik || "-",
+    nama: u.nama_lengkap || item.nama_pemohon || "Unknown",
+    no_hp: u.nomor_hp || "-",
+    email: u.email || "-",
+    pekerjaan: u.pekerjaan || "-",
+    jenis_kelamin: u.jenis_kelamin || "Unknown",
+    kecamatan: u.kecamatan || "Unknown",
+    nagari: u.nagari || "Unknown",
+    jorong: u.jorong || "-"
+  }
+})
 
     setData(cleaned)
     setFiltered(cleaned)
@@ -104,10 +124,95 @@ export default function DashboardAdminPage() {
     setFiltered(result)
   }
 
+
+// Export seluruh data filtered ke Excel
+function exportFullExcel() {
+  const fullData = filtered.map((item, index) => ({
+    No: index + 1,
+    NIK: item.nik || "-",
+    Nama: item.nama || "-",
+    NoHP: item.no_hp || "-",
+    Email: item.email || "-",
+    Pekerjaan: item.pekerjaan || "-",
+    Jorong: item.jorong || "-",
+    JenisLayanan: item.layanan,
+    Loket: item.loket,
+    JenisKelamin: item.jenis_kelamin,
+    Kecamatan: item.kecamatan,
+    Nagari: item.nagari,
+    WaktuProsesMenit: item.waktu.toFixed(2),
+    Tanggal: new Date(item.created_at).toLocaleString()
+  }))
+
+  const ws = XLSX.utils.json_to_sheet(fullData)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, "Data Lengkap")
+
+  XLSX.writeFile(wb, `data-lengkap-${filter}.xlsx`)
+}
+
+// Export seluruh data filtered ke PDF
+function exportFullPDF() {
+  const doc = new jsPDF();
+  doc.setFontSize(16);
+  doc.text("Laporan Pelayanan Disdukcapil", 14, 15);
+  doc.setFontSize(10);
+  doc.text(`Filter: ${filter.toUpperCase()}`, 14, 22);
+
+  // Tabel 1: Detail User
+  autoTable(doc, {
+    startY: 30,
+    head: [[
+      "No",
+      "NIK",
+      "Nama",
+      "Jenis Kelamin",
+      "No HP",
+      "Email",
+      "Pekerjaan",
+      "Kecamatan",
+      "Nagari",
+      "Jorong",
+      "Jenis Pelayanan",
+      "Estimasi Waktu"
+    ]],
+    body: filtered.map((item, idx) => [
+      idx + 1,
+      item.nik || "Unknown",
+      item.nama || "Unknown",
+      item.jenis_kelamin || "Unknown",
+      item.no_hp || "Unknown",
+      item.email || "Unknown",
+      item.pekerjaan || "Unknown",
+      item.kecamatan || "Unknown",
+      item.nagari || "Unknown",
+      item.jorong || "Unknown",
+      item.layanan,
+      item.waktu.toFixed(2)
+    ])
+  });
+
+  // Tabel 2: Summary Layanan
+  autoTable(doc, {
+    startY: doc.lastAutoTable.finalY + 10,
+    head: [["Jenis Pelayanan", "Total", "Estimasi Total Waktu", "Rata-rata Waktu"]],
+    body: layananSummary.map(item => [
+      item.nama,
+      item.jumlah,
+      item.totalWaktu.toFixed(2),
+      item.avg.toFixed(2)
+    ])
+  });
+
+  doc.save(`laporan-lengkap-${filter}.pdf`);
+}
+
   function resetFilter() {
     setFilter("all")
     setFiltered(data)
   }
+
+  
   // Summary Layanan & Loket
   const layananMap = {}, loketMap = {}
   const genderMap = {}, kecamatanMap = {}, nagariMap = {}
@@ -141,9 +246,12 @@ export default function DashboardAdminPage() {
   })
 
   // Convert Map to Array
-  const layananSummary = Object.entries(layananMap).map(([nama,v])=>({
-    nama, total:v.total, avg:v.sum/v.total, min:v.min, max:v.max
-  })).sort((a,b)=>b.total-a.total)
+  const layananSummary = Object.entries(layananMap).map(([nama, v]) => ({
+  nama,
+  jumlah: v.total,
+  totalWaktu: v.sum,
+  avg: v.sum / v.total
+})).sort((a,b)=>b.jumlah-b.jumlah)
 
   const loketSummary = Object.entries(loketMap).map(([loket,v])=>({
     loket, total:v.total, avg:v.sum/v.total
@@ -159,21 +267,20 @@ export default function DashboardAdminPage() {
   const fastest = layananSummary.length ? Math.min(...layananSummary.map(i=>i.min)) : 0
   const slowest = layananSummary.length ? Math.max(...layananSummary.map(i=>i.max)) : 0
   const card = "bg-white p-5 rounded-xl shadow"
-
+  const totalWaktu = filtered.reduce((a,b) => a + b.waktu, 0);
+  const rataRataWaktu = totalPelayanan > 0 ? totalWaktu / totalPelayanan : 0;
   // =========================
   // CHART DATA
   // =========================
 
-  const chartLayanan = {
-    labels: layananSummary.map(i => i.nama),
-    datasets: [
-      {
-        label: "Rata-rata (Menit)",
-        data: layananSummary.map(i => i.avg),
-        backgroundColor: "#3b82f6"
-      }
-    ]
-  }
+ const chartLayanan = {
+  labels: layananSummary.map(i => i.nama),
+  datasets: [{
+    label: "Total Pelayanan",
+    data: layananSummary.map(i => i.jumlah),
+    backgroundColor: "#3b82f6"
+  }]
+}
 
   const chartLoket = {
     labels: loketSummary.map(i => i.loket),
@@ -241,7 +348,7 @@ export default function DashboardAdminPage() {
           {/* HEADER */}
           <div>
             <h1 className="text-3xl font-bold">
-              Dashboard Admin Level 2
+              Dashboard Admin
             </h1>
             <p className="text-gray-500">
               Monitoring lengkap pelayanan Disdukcapil
@@ -250,12 +357,32 @@ export default function DashboardAdminPage() {
 
           {/* FILTER */}
           <div className="flex flex-wrap gap-2">
+            <div>
             <button onClick={()=>applyFilter("hari")} className="px-3 py-2 bg-blue-500 text-white rounded">Hari</button>
             <button onClick={()=>applyFilter("minggu")} className="px-3 py-2 bg-green-500 text-white rounded">Minggu</button>
             <button onClick={()=>applyFilter("bulan")} className="px-3 py-2 bg-purple-500 text-white rounded">Bulan</button>
             <button onClick={()=>applyFilter("tahun")} className="px-3 py-2 bg-orange-500 text-white rounded">Tahun</button>
             <button onClick={resetFilter} className="px-3 py-2 bg-gray-500 text-white rounded">Reset</button>
           </div>
+          <div>
+             <button
+    onClick={exportFullPDF}
+    className="px-4 py-2 bg-red-600 text-white rounded-lg"
+  >
+    Export PDF
+  </button>
+
+  <button
+    onClick={exportFullExcel}
+    className="px-4 py-2 bg-green-600 text-white rounded-lg"
+  >
+    Export Excel
+  </button>
+          </div>
+          
+          </div>
+
+
 
           {/* KPI CARDS */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -266,6 +393,20 @@ export default function DashboardAdminPage() {
             </div>
 
             <div className={card}>
+              <p>Total Waktu (mnt)</p>
+              <p className="text-2xl font-bold text-green-600">
+                {totalWaktu.toFixed(2)} mnt
+              </p>
+            </div>
+
+            <div className={card}>
+              <p>Rata-Rata Waktu (mnt)</p>
+              <p className="text-2xl font-bold text-green-600">
+                {rataRataWaktu .toFixed(2)} mnt
+              </p>
+            </div>
+
+            {/* <div className={card}>
               <p>Tercepat</p>
               <p className="text-2xl font-bold text-green-600">
                 {fastest.toFixed(2)} mnt
@@ -284,7 +425,7 @@ export default function DashboardAdminPage() {
               <p className="text-2xl font-bold text-blue-600">
                 {avgGlobal.toFixed(2)} mnt
               </p>
-            </div>
+            </div> */}
 
           </div>
 
@@ -335,30 +476,25 @@ export default function DashboardAdminPage() {
 
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="p-3 text-left">Layanan</th>
-                    <th className="p-3 text-left">Jumlah</th>
-                    <th className="p-3 text-left">Rata-rata</th>
-                    <th className="p-3 text-left">Tercepat</th>
-                    <th className="p-3 text-left">Terlama</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {layananSummary.map((i, idx) => (
-                    <tr key={idx} className="border-b hover:bg-gray-50">
-                      <td className="p-3">{i.nama}</td>
-                      <td className="p-3">{i.total}</td>
-                      <td className="p-3 text-blue-600">{i.avg.toFixed(2)}</td>
-                      <td className="p-3 text-green-600">{i.min.toFixed(2)}</td>
-                      <td className="p-3 text-red-600">{i.max.toFixed(2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-
-              </table>
+  <thead className="bg-gray-100">
+    <tr>
+      <th className="p-3 text-left">Layanan</th>
+      <th className="p-3 text-left">Jumlah</th>
+      <th className="p-3 text-left">Total Waktu</th>
+      <th className="p-3 text-left">Rata-rata Waktu</th>
+    </tr>
+  </thead>
+  <tbody>
+    {layananSummary.map((i, idx) => (
+      <tr key={idx} className="border-b">
+        <td className="p-3">{i.nama}</td>
+        <td className="p-3">{i.jumlah}</td>
+        <td className="p-3 text-purple-600">{i.totalWaktu.toFixed(2)}</td>
+        <td className="p-3 text-blue-600">{i.avg.toFixed(2)}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>
             </div>
 
           </div>
