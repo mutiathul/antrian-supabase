@@ -1,10 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { supabase } from "../../../../../lib/supabaseClient"
+import { supabase } from "../../../../lib/supabaseClient"
 
-import DashboardLayout from "../../../../../components/layouts/DashboardLayout"
-import AuthGuard from "../../../../../components/guards/AuthGuard"
+import DashboardLayout from "../../../components/layouts/DashboardLayout"
+import AuthGuard from "../../../components/guards/AuthGuard"
 
 import {
   Bar
