@@ -66,11 +66,11 @@ export default function RegisterPage(){
     } = e.target
 
     // =========================
-    // NIK MAX 13
+    // NIK MAX 16
     // =========================
     if(name === "nik"){
 
-      if(value.length > 13)
+      if(value.length > 16)
         return
     }
 
@@ -162,10 +162,10 @@ export default function RegisterPage(){
       // =========================
       // VALIDASI
       // =========================
-      if(form.nik.length !== 13){
+      if(form.nik.length !== 16){
 
         alert(
-          "NIK harus 13 digit"
+          "NIK harus 16 digit"
         )
 
         setLoading(false)
@@ -183,6 +183,38 @@ export default function RegisterPage(){
 
         return
       }
+
+      // VALIDASI PASSWORD MINIMAL 6 KARAKTER
+if(form.password.length < 6){
+  alert("Password minimal 6 karakter")
+  setLoading(false)
+  return
+}
+// CEK NIK SUDAH TERDAFTAR
+const { data: existingNik } = await supabase
+  .from("users")
+  .select("id")
+  .eq("nik", form.nik)
+  .maybeSingle()
+
+if(existingNik){
+  alert("NIK sudah terdaftar")
+  setLoading(false)
+  return
+}
+
+// CEK EMAIL SUDAH TERDAFTAR
+const { data: existingEmail } = await supabase
+  .from("users")
+  .select("id")
+  .eq("email", form.email)
+  .maybeSingle()
+
+if(existingEmail){
+  alert("Email sudah terdaftar")
+  setLoading(false)
+  return
+}
 
       // =========================
       // REGISTER AUTH
@@ -411,8 +443,9 @@ export default function RegisterPage(){
               name="nik"
               value={form.nik}
               onChange={handleChange}
-              placeholder="13 digit"
-              type="number"
+              placeholder="16 digit"
+              type="text"
+inputMode="numeric"
             />
 
             {/* NAMA */}
@@ -443,7 +476,7 @@ export default function RegisterPage(){
               name="password"
               value={form.password}
               onChange={handleChange}
-              placeholder="********"
+               placeholder="Minimal 6 karakter"
               type="password"
             />
 
@@ -455,7 +488,8 @@ export default function RegisterPage(){
               value={form.nomor_hp}
               onChange={handleChange}
               placeholder="08xxxxxxxx"
-              type="number"
+              type="text"
+inputMode="numeric"
             />
 
             {/* JK */}
