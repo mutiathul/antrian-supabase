@@ -28,6 +28,9 @@ export default function RegisterPage(){
   const [villages,setVillages]
     = useState([])
 
+  const [jorongs,setJorongs]
+  = useState([])
+
   const [form,setForm]
     = useState({
 
@@ -82,6 +85,14 @@ export default function RegisterPage(){
       if(value.length > 14)
         return
     }
+//     if(
+//   form.nomor_hp &&
+//   form.nomor_hp.length > 14
+// ){
+//   alert("Nomor HP maksimal 14 digit")
+//   setLoading(false)
+//   return
+// }
 
     setForm({
 
@@ -125,26 +136,135 @@ export default function RegisterPage(){
   // =========================
   // HANDLE NAGARI
   // =========================
-  function handleVillage(e){
+  // function handleVillage(e){
 
-    const villageId =
-      e.target.value
+  //   const villageId =
+  //     e.target.value
 
-    const selectedVillage =
-      villages.find(
-        item =>
-          item.id === villageId
-      )
+  //   const selectedVillage =
+  //     villages.find(
+  //       item =>
+  //         item.id === villageId
+  //     )
 
-    setForm({
+  //   setForm({
 
-      ...form,
+  //     ...form,
 
-      nagari:
-        selectedVillage?.name || ""
+  //     nagari:
+  //       selectedVillage?.name || ""
 
-    })
-  }
+  //   })
+  // }
+//   function handleVillage(e){
+
+//   const villageId =
+//     e.target.value
+
+//   const selectedVillage =
+//     villages.find(
+//       item =>
+//         item.id === villageId
+//     )
+
+//   setJorongs(
+//     selectedVillage?.jorong || []
+//   )
+
+//   setForm({
+
+//     ...form,
+
+//     nagari:
+//       selectedVillage?.name || "",
+
+//     jorong:""
+
+//   })
+// }
+// function handleVillage(e){
+
+//   const villageId = e.target.value
+
+//   const selectedVillage =
+//     villages.find(
+//       item => item.id === villageId
+//     )
+
+//   console.log("Village =", selectedVillage)
+
+//   setJorongs(
+//     selectedVillage?.jorong || []
+//   )
+
+//   setForm({
+//     ...form,
+//     nagari: selectedVillage?.name || "",
+//     jorong:""
+//   })
+// }
+function handleVillage(e){
+
+  const villageId =
+    e.target.value
+
+  const selectedVillage =
+    villages.find(
+      item =>
+        item.id === villageId
+    )
+
+  setJorongs(
+    selectedVillage?.jorong || []
+  )
+
+  setForm({
+
+    ...form,
+
+    nagari:
+      selectedVillage?.name || "",
+
+    jorong:""
+
+  })
+}
+
+// =========================
+  // HANDLE JORONG
+  // =========================
+
+// function handleJorong(e){
+
+//   const jorongId =
+//     e.target.value
+
+//   const selectedJorong =
+//     jorongs.find(
+//       item =>
+//         item.id === jorongId
+//     )
+
+//   setForm({
+
+//     ...form,
+
+//     jorong:
+//       selectedJorong?.name || ""
+
+//   })
+// }
+function handleJorong(e){
+
+  setForm({
+
+    ...form,
+
+    jorong:e.target.value
+
+  })
+
+}
 
   // =========================
   // REGISTER
@@ -204,16 +324,31 @@ if(existingNik){
 }
 
 // CEK EMAIL SUDAH TERDAFTAR
-const { data: existingEmail } = await supabase
-  .from("users")
-  .select("id")
-  .eq("email", form.email)
-  .maybeSingle()
+// const { data: existingEmail } = await supabase
+//   .from("users")
+//   .select("id")
+//   .eq("email", form.email)
+//   .maybeSingle()
 
-if(existingEmail){
-  alert("Email sudah terdaftar")
-  setLoading(false)
-  return
+// if(existingEmail){
+//   alert("Email sudah terdaftar")
+//   setLoading(false)
+//   return
+// }
+if(form.email){
+
+  const { data: existingEmail } = await supabase
+    .from("users")
+    .select("id")
+    .eq("email", form.email)
+    .maybeSingle()
+
+  if(existingEmail){
+    alert("Email sudah terdaftar")
+    setLoading(false)
+    return
+  }
+
 }
 
       // =========================
@@ -439,6 +574,7 @@ if(existingEmail){
             {/* NIK */}
 
             <Input
+              required
               label="NIK"
               name="nik"
               value={form.nik}
@@ -451,6 +587,7 @@ inputMode="numeric"
             {/* NAMA */}
 
             <Input
+            required
               label="Nama Lengkap"
               name="nama_lengkap"
               value={form.nama_lengkap}
@@ -472,6 +609,7 @@ inputMode="numeric"
             {/* PASSWORD */}
 
             <Input
+            required
               label="Password"
               name="password"
               value={form.password}
@@ -545,6 +683,7 @@ inputMode="numeric"
             {/* PEKERJAAN */}
 
             <Input
+            required
               label="Pekerjaan"
               name="pekerjaan"
               value={form.pekerjaan}
@@ -664,9 +803,10 @@ inputMode="numeric"
 
             {/* JORONG */}
 
-            <div className="md:col-span-2">
+            {/* <div className="md:col-span-2">
 
               <Input
+              required
                 label="Jorong"
                 name="jorong"
                 value={form.jorong}
@@ -674,7 +814,64 @@ inputMode="numeric"
                 placeholder="Masukkan jorong"
               />
 
-            </div>
+            </div> */}
+<div className="md:col-span-2">
+
+  <label
+    className="
+      block
+      mb-2
+      font-medium
+      text-gray-700
+    "
+  >
+
+    Jorong
+
+    <span className="text-red-500">
+      {" "}*
+    </span>
+
+  </label>
+
+  <select
+    required
+    value={form.jorong}
+    onChange={handleJorong}
+    className="
+      w-full
+      border
+      border-gray-300
+      rounded-xl
+      p-3
+      focus:outline-none
+      focus:ring-2
+      focus:ring-blue-500
+    "
+  >
+
+    <option value="">
+      Pilih Jorong
+    </option>
+
+    {
+      jorongs.map((item)=>(
+
+        <option
+          key={item.id}
+          value={item.name}
+        >
+
+          {item.name}
+
+        </option>
+
+      ))
+    }
+
+  </select>
+
+</div>
 
             {/* BUTTON */}
 
@@ -744,17 +941,55 @@ inputMode="numeric"
 // =========================
 // INPUT
 // =========================
+// function Input({
+
+//   label,
+//   ...props
+
+// }){
+
+//   return(
+
+//     <div>
+
+//       <label
+//         className="
+//           block
+//           mb-2
+//           font-medium
+//           text-gray-700
+//         "
+//       >
+
+//         {label}
+
+//       </label>
+
+//       <input
+//         {...props}
+//         className="
+//           w-full
+//           border
+//           border-gray-300
+//           rounded-xl
+//           p-3
+//           focus:outline-none
+//           focus:ring-2
+//           focus:ring-blue-500
+//         "
+//       />
+
+//     </div>
+//   )
+// }
+
 function Input({
-
   label,
+  required = false,
   ...props
-
-}){
-
-  return(
-
+}) {
+  return (
     <div>
-
       <label
         className="
           block
@@ -763,14 +998,18 @@ function Input({
           text-gray-700
         "
       >
-
         {label}
 
+        {required && (
+          <span className="text-red-500">
+            {" "}*
+          </span>
+        )}
       </label>
 
       <input
         {...props}
-        required
+        required={required}
         className="
           w-full
           border
@@ -782,7 +1021,6 @@ function Input({
           focus:ring-blue-500
         "
       />
-
     </div>
   )
 }

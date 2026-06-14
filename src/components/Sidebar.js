@@ -1,12 +1,10 @@
-"use client"
+"use client";
 
-import Link from "next/link"
+import Link from "next/link";
 
-import { usePathname }
-from "next/navigation"
+import { usePathname } from "next/navigation";
 
 import {
-
   LayoutDashboard,
   Users,
   FileText,
@@ -15,21 +13,13 @@ import {
   Clock3,
   ChevronDown,
   ChevronRight,
-  BarChart3
+  BarChart3,
+} from "lucide-react";
 
-} from "lucide-react"
+import { useState } from "react";
 
-import { useState } from "react"
-
-export default function Sidebar({
-
-  role,
-  sidebarOpen,
-  setSidebarOpen
-
-}){
-
-  const pathname = usePathname()
+export default function Sidebar({ role, sidebarOpen, setSidebarOpen, loket }) {
+  const pathname = usePathname();
 
   // const [openRekapan,setOpenRekapan]
   // = useState(
@@ -40,29 +30,18 @@ export default function Sidebar({
 
   // )
 
- const [openPelayanan,setOpenPelayanan]
-= useState(
+  const [openPelayanan, setOpenPelayanan] = useState(
+    pathname.includes("/admin/rekapan"),
+  );
 
-  pathname.includes(
-    "/admin/rekapan"
-  )
-
-)
-
-const [openInternal,setOpenInternal]
-= useState(
-
-  pathname.includes(
-    "/admin/internal"
-  )
-
-)
+  const [openInternal, setOpenInternal] = useState(
+    pathname.includes("/admin/internal"),
+  );
 
   // =========================
   // ACTIVE MENU
   // =========================
-  function menuClass(path){
-
+  function menuClass(path) {
     return `
 
       flex
@@ -84,36 +63,30 @@ const [openInternal,setOpenInternal]
 
       ${
         pathname === path
-
-        ? `
+          ? `
           bg-white
           text-blue-700
           shadow-sm
         `
-
-        : `
+          : `
           text-blue-100
           hover:bg-blue-600
           hover:text-white
         `
       }
 
-    `
+    `;
   }
 
-  return(
-
+  return (
     <>
-
       {/* ========================= */}
       {/* BACKDROP MOBILE */}
       {/* ========================= */}
 
-      {
-        sidebarOpen && (
-
-          <div
-            className="
+      {sidebarOpen && (
+        <div
+          className="
               fixed
               inset-0
               bg-black/50
@@ -121,13 +94,9 @@ const [openInternal,setOpenInternal]
               z-40
               lg:hidden
             "
-            onClick={()=>
-              setSidebarOpen(false)
-            }
-          />
-
-        )
-      }
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
       {/* ========================= */}
       {/* SIDEBAR */}
@@ -166,16 +135,11 @@ const [openInternal,setOpenInternal]
           overflow-hidden
 
           ${
-            sidebarOpen
-
-            ? "translate-x-0"
-
-            : "-translate-x-full lg:translate-x-0"
+            sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
           }
 
         `}
       >
-
         {/* ========================= */}
         {/* HEADER */}
         {/* ========================= */}
@@ -191,9 +155,7 @@ const [openInternal,setOpenInternal]
             shrink-0
           "
         >
-
           <div>
-
             <h1
               className="
                 text-2xl
@@ -201,9 +163,7 @@ const [openInternal,setOpenInternal]
                 tracking-wide
               "
             >
-
               E-Antrian
-
             </h1>
 
             <p
@@ -213,13 +173,9 @@ const [openInternal,setOpenInternal]
                 mt-1
               "
             >
-
               Disdukcapil
-
             </p>
-
           </div>
-
         </div>
 
         {/* ========================= */}
@@ -234,47 +190,30 @@ const [openInternal,setOpenInternal]
             py-5
           "
         >
-
           <div className="space-y-2">
-
             {/* ========================= */}
             {/* ADMIN */}
             {/* ========================= */}
 
-            {
-              role === "admin" && (
-                <>
-{/* DASHBOARD */}
+            {role === "admin" && (
+              <>
+                {/* DASHBOARD */}
 
-<Link
-  href="/admin/dashboard"
-  className={
-    menuClass(
-      "/admin/dashboard"
-    )
-  }
->
+                <Link
+                  href="/admin/dashboard"
+                  className={menuClass("/admin/dashboard")}
+                >
+                  <LayoutDashboard size={20} />
+                  Dashboard
+                </Link>
 
-  <LayoutDashboard size={20} />
+                {/* ========================= */}
+                {/* REKAPAN PELAYANAN */}
+                {/* ========================= */}
 
-  Dashboard
-
-</Link>
-
-
-{/* ========================= */}
-{/* REKAPAN PELAYANAN */}
-{/* ========================= */}
-
-<button
-
-  onClick={()=>
-    setOpenPelayanan(
-      !openPelayanan
-    )
-  }
-
-  className="
+                <button
+                  onClick={() => setOpenPelayanan(!openPelayanan)}
+                  className="
     w-full
     flex
     items-center
@@ -289,76 +228,44 @@ const [openInternal,setOpenInternal]
 
     hover:bg-blue-600
   "
->
+                >
+                  <div className="flex items-center gap-3 whitespace-nowrap">
+                    <FileText size={20} />
+                    Rekapan Pelayanan
+                  </div>
 
-  <div className="flex items-center gap-3 whitespace-nowrap">
+                  {openPelayanan ? (
+                    <ChevronDown size={18} />
+                  ) : (
+                    <ChevronRight size={18} />
+                  )}
+                </button>
 
-    <FileText size={20} />
+                {openPelayanan && (
+                  <div className="ml-10 space-y-1">
+                    <Link
+                      href="/admin/rekapan/by-name"
+                      className={menuClass("/admin/rekapan/by-name")}
+                    >
+                      By Name
+                    </Link>
 
-    Rekapan Pelayanan
+                    <Link
+                      href="/admin/rekapan/by-address"
+                      className={menuClass("/admin/rekapan/by-address")}
+                    >
+                      By Address
+                    </Link>
+                  </div>
+                )}
 
-  </div>
+                {/* ========================= */}
+                {/* REKAPAN INTERNAL */}
+                {/* ========================= */}
 
-  {
-    openPelayanan
-
-    ? <ChevronDown size={18} />
-
-    : <ChevronRight size={18} />
-  }
-
-</button>
-
-{
-  openPelayanan && (
-
-    <div className="ml-10 space-y-1">
-
-      <Link
-        href="/admin/rekapan/by-name"
-        className={
-          menuClass(
-            "/admin/rekapan/by-name"
-          )
-        }
-      >
-
-        By Name
-
-      </Link>
-
-      <Link
-        href="/admin/rekapan/by-address"
-        className={
-          menuClass(
-            "/admin/rekapan/by-address"
-          )
-        }
-      >
-
-        By Address
-
-      </Link>
-
-    </div>
-
-  )
-}
-
-
-{/* ========================= */}
-{/* REKAPAN INTERNAL */}
-{/* ========================= */}
-
-<button
-
-  onClick={()=>
-    setOpenInternal(
-      !openInternal
-    )
-  }
-
-  className="
+                <button
+                  onClick={() => setOpenInternal(!openInternal)}
+                  className="
     w-full
     flex
     items-center
@@ -373,112 +280,65 @@ const [openInternal,setOpenInternal]
 
     hover:bg-blue-600
   "
->
+                >
+                  <div className="flex items-center gap-3">
+                    <BarChart3 size={20} />
+                    Rekapan Internal
+                  </div>
 
-  <div className="flex items-center gap-3">
+                  {openInternal ? (
+                    <ChevronDown size={18} />
+                  ) : (
+                    <ChevronRight size={18} />
+                  )}
+                </button>
 
-    <BarChart3 size={20} />
+                {openInternal && (
+                  <div className="ml-10 space-y-1">
+                    <Link
+                      href="/admin/internal/produktivitas"
+                      className={menuClass("/admin/internal/produktivitas")}
+                    >
+                      Produktivitas
+                    </Link>
 
-    Rekapan Internal
+                    <Link
+                      href="/admin/internal/rata-rata"
+                      className={menuClass("/admin/internal/rata-rata")}
+                    >
+                      Rata-rata Waktu
+                    </Link>
 
-  </div>
+                    <Link
+                      href="/admin/internal/kinerja"
+                      className={menuClass("/admin/internal/kinerja")}
+                    >
+                      Grafik Kinerja
+                    </Link>
+                  </div>
+                )}
 
-  {
-    openInternal
+                {/* MASTER LAYANAN */}
 
-    ? <ChevronDown size={18} />
+                <Link
+                  href="/admin/layanan"
+                  className={menuClass("/admin/layanan")}
+                >
+                  <ClipboardList size={20} />
+                  Kelola Layanan
+                </Link>
 
-    : <ChevronRight size={18} />
-  }
+                {/* PETUGAS */}
 
-</button>
+                <Link
+                  href="/admin/petugas"
+                  className={menuClass("/admin/petugas")}
+                >
+                  <UserCog size={20} />
+                  Kelola Petugas
+                </Link>
 
-{
-  openInternal && (
-
-    <div className="ml-10 space-y-1">
-
-      <Link
-        href="/admin/internal/produktivitas"
-        className={
-          menuClass(
-            "/admin/internal/produktivitas"
-          )
-        }
-      >
-
-        Produktivitas
-
-      </Link>
-
-      <Link
-        href="/admin/internal/rata-rata"
-        className={
-          menuClass(
-            "/admin/internal/rata-rata"
-          )
-        }
-      >
-
-        Rata-rata Waktu
-
-      </Link>
-
-      <Link
-        href="/admin/internal/kinerja"
-        className={
-          menuClass(
-            "/admin/internal/kinerja"
-          )
-        }
-      >
-
-        Grafik Kinerja
-
-      </Link>
-
-    </div>
-
-  )
-}
-
-
-{/* MASTER LAYANAN */}
-
-<Link
-  href="/admin/layanan"
-  className={
-    menuClass(
-      "/admin/layanan"
-    )
-  }
->
-
-  <ClipboardList size={20} />
-
-  Kelola Layanan
-
-</Link>
-
-
-{/* PETUGAS */}
-
-<Link
-  href="/admin/petugas"
-  className={
-    menuClass(
-      "/admin/petugas"
-    )
-  }
->
-
-  <UserCog size={20} />
-
-  Kelola Petugas
-
-</Link>
-
-                  {/* <Link
+                {/* <Link
                     href="/admin/rekapan"
                     className={
                       menuClass(
@@ -492,112 +352,97 @@ const [openInternal,setOpenInternal]
                     Rekapan
 
                   </Link> */}
-
-                </>
-              )
-            }
+              </>
+            )}
 
             {/* ========================= */}
             {/* PETUGAS */}
             {/* ========================= */}
 
-            {
-              role === "petugas" && (
-                <>
-
+            {role === "petugas" && (
+              <>
+                <Link
+                  href="/petugas/dashboard"
+                  className={menuClass("/petugas/dashboard")}
+                >
+                  <LayoutDashboard size={20} />
+                  Dashboard
+                </Link>
+                {pathname && (
                   <Link
-                    href="/petugas/dashboard"
-                    className={
-                      menuClass(
-                        "/petugas/dashboard"
-                      )
-                    }
+                    href="/petugas/cetak-antrian"
+                    className={menuClass("/petugas/cetak-antrian")}
                   >
-
-                    <LayoutDashboard size={20} />
-
-                    Dashboard
-
+                    <FileText size={20} />
+                    Cetak Antrian
                   </Link>
+                )}
 
-                  <Link
-  href="/petugas/riwayat"
-  className={
-    menuClass(
-      "/petugas/riwayat"
-    )
-  }
->
+                <Link
+                  href="/petugas/riwayat"
+                  className={menuClass("/petugas/riwayat")}
+                >
+                  <Clock3 size={20} />
+                  Riwayat Penyelesaian
+                </Link>
+              </>
+            )}
 
-  <Clock3 size={20} />
+            {
+  role === "petugas"
+  &&
+  loket === "FO"
+  &&
+(
+  <Link
+    href="/petugas/cetak-antrian"
+    className={
+      menuClass(
+        "/petugas/cetak-antrian"
+      )
+    }
+  >
 
-  Riwayat Penyelesaian
+    <FileText size={20} />
 
-</Link>
+    Cetak Antrian
 
-                </>
-              )
-            }
+  </Link>
+)
+}
 
             {/* ========================= */}
             {/* MASYARAKAT */}
             {/* ========================= */}
 
-            {
-              role === "masyarakat" && (
-                <>
+            {role === "masyarakat" && (
+              <>
+                <Link
+                  href="/user/dashboard"
+                  className={menuClass("/user/dashboard")}
+                >
+                  <LayoutDashboard size={20} />
+                  Dashboard
+                </Link>
 
-                  <Link
-                    href="/user/dashboard"
-                    className={
-                      menuClass(
-                        "/user/dashboard"
-                      )
-                    }
-                  >
+                <Link
+                  href="/user/ambil-antrian"
+                  className={menuClass("/user/ambil-antrian")}
+                >
+                  <Users size={20} />
+                  Ambil Antrian
+                </Link>
 
-                    <LayoutDashboard size={20} />
-
-                    Dashboard
-
-                  </Link>
-
-                  <Link
-                    href="/user/ambil-antrian"
-                    className={
-                      menuClass(
-                        "/user/ambil-antrian"
-                      )
-                    }
-                  >
-
-                    <Users size={20} />
-
-                    Ambil Antrian
-
-                  </Link>
-
-                  <Link
-                    href="/user/riwayat"
-                    className={
-                      menuClass(
-                        "/user/riwayat"
-                      )
-                    }
-                  >
-
-                    <Clock3 size={20} />
-
-                    Riwayat
-
-                  </Link>
-
-                </>
-              )
-            }
-
+                <Link
+                  href="/user/riwayat"
+                  className={menuClass("/user/riwayat")}
+                >
+                  <Clock3 size={20} />
+                  Riwayat
+                </Link>
+              </>
+            )}
           </div>
-
         </div>
 
         {/* ========================= */}
@@ -614,13 +459,9 @@ const [openInternal,setOpenInternal]
             shrink-0
           "
         >
-
           © 2026 Sistem Antrian
-
         </div>
-
       </aside>
-
     </>
-  )
+  );
 }

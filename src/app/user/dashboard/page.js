@@ -172,78 +172,194 @@ export default function UserDashboard(){
   // =========================
   // COUNTDOWN
   // =========================
-  useEffect(()=>{
+  // useEffect(()=>{
+  //     // FO tidak menggunakan countdown
 
-    if(!antrian?.expired_at) return
+  // if(
+  //   antrian?.status === "verifikasi"
+  // ){
+  //   return
+  // }
 
-    const interval = setInterval(()=>{
+  //   if(!antrian?.expired_at) return
 
-      const now =
-        new Date().getTime()
+  //   const interval = setInterval(()=>{
 
-      const expired =
-        new Date(
-          antrian.expired_at
-        ).getTime()
+  //     const now =
+  //       new Date().getTime()
 
-      const distance =
-        expired - now
+  //     const expired =
+  //       new Date(
+  //         antrian.expired_at
+  //       ).getTime()
 
-      // =========================
-      // AUTO BATAL
-      // =========================
-      if(distance <= 0){
+  //     const distance =
+  //       expired - now
 
-        setSisaWaktu("00:00")
+  //     // =========================
+  //     // AUTO BATAL
+  //     // =========================
+  //     if(distance <= 0){
 
-        clearInterval(interval)
+  //       setSisaWaktu("00:00")
 
-        autoCancel()
+  //       clearInterval(interval)
 
-        return
-      }
+  //       autoCancel()
 
-      const minutes = Math.floor(
-        distance / 1000 / 60
-      )
+  //       return
+  //     }
 
-      const seconds = Math.floor(
-        (distance / 1000) % 60
-      )
+  //     const minutes = Math.floor(
+  //       distance / 1000 / 60
+  //     )
 
-      setSisaWaktu(
+  //     const seconds = Math.floor(
+  //       (distance / 1000) % 60
+  //     )
 
-        `${String(minutes)
-          .padStart(2,"0")}:${String(seconds)
-          .padStart(2,"0")}`
+  //     setSisaWaktu(
 
-      )
+  //       `${String(minutes)
+  //         .padStart(2,"0")}:${String(seconds)
+  //         .padStart(2,"0")}`
 
-    },1000)
+  //     )
 
-    return ()=> clearInterval(interval)
+  //   },1000)
 
-  },[antrian])
+  //   return ()=> clearInterval(interval)
+
+  // },[antrian])
+
+  // =========================
+// COUNTDOWN
+// =========================
+// useEffect(() => {
+
+//   // Belum ada antrian
+//   if (!antrian) return
+
+//   // =========================
+//   // KHUSUS FRONT OFFICE
+//   // TIDAK ADA AUTO BATAL
+//   // =========================
+//   if (antrian.status === "verifikasi") {
+
+//     setSisaWaktu("-")
+
+//     return
+//   }
+
+//   // Tidak ada expired_at
+//   if (!antrian.expired_at) return
+
+//   const interval = setInterval(() => {
+
+//     const now =
+//       new Date().getTime()
+
+//     const expired =
+//       new Date(
+//         antrian.expired_at
+//       ).getTime()
+
+//     const distance =
+//       expired - now
+
+//     // =========================
+//     // AUTO BATAL
+//     // =========================
+//     if (distance <= 0) {
+
+//       setSisaWaktu("00:00")
+
+//       clearInterval(interval)
+
+//       autoCancel()
+
+//       return
+//     }
+
+//     const minutes = Math.floor(
+//       distance / 1000 / 60
+//     )
+
+//     const seconds = Math.floor(
+//       (distance / 1000) % 60
+//     )
+
+//     setSisaWaktu(
+
+//       `${String(minutes)
+//         .padStart(2, "0")}:${String(seconds)
+//         .padStart(2, "0")}`
+
+//     )
+
+//   }, 1000)
+
+//   return () => {
+
+//     clearInterval(interval)
+
+//   }
+
+// }, [antrian])
 
   // =========================
   // AUTO CANCEL
   // =========================
-  async function autoCancel(){
+  // async function autoCancel(){
 
-    if(!antrian?.id) return
+  //   if(!antrian?.id) return
 
-    await supabase
+  //   await supabase
 
-      .from("antrians")
+  //     .from("antrians")
 
-      .update({
-        status:"dibatalkan"
-      })
+  //     .update({
+  //       status:"dibatalkan"
+  //     })
 
-      .eq("id",antrian.id)
+  //     .eq("id",antrian.id)
 
-    setAntrian(null)
-  }
+  //   setAntrian(null)
+  // }
+
+//   async function autoCancel(){
+
+//   if(!antrian?.id) return
+
+//   // =========================
+//   // FO TIDAK BOLEH AUTO BATAL
+//   // =========================
+//   if(
+//     antrian.status === "verifikasi"
+//   ){
+//     return
+//   }
+
+//   const { error } =
+//     await supabase
+
+//       .from("antrians")
+
+//       .update({
+//         status:"dibatalkan"
+//       })
+
+//       .eq("id",antrian.id)
+
+//   if(error){
+
+//     console.log(error)
+
+//     return
+//   }
+
+//   setAntrian(null)
+// }
 
   // =========================
   // CANCEL MANUAL
@@ -729,12 +845,12 @@ export default function UserDashboard(){
               }
             />
 
-            <InfoCard
+            {/* <InfoCard
               title="Sisa Waktu"
               value={
                 sisaWaktu || "-"
               }
-            />
+            /> */}
 
           </div>
 
@@ -757,9 +873,9 @@ export default function UserDashboard(){
               leading-relaxed
               font-medium
             ">
-
-              Jika dalam 30 menit belum datang,
-              maka antrian otomatis dibatalkan.
+Jika nomor antrian dipanggil sebanyak
+3 kali dan tidak hadir,
+maka antrian otomatis dibatalkan.
 
             </p>
 

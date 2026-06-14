@@ -239,20 +239,98 @@ export default function DashboardPetugas(){
   // =========================
   // PANGGIL
   // =========================
- async function panggil(item){
+//  async function panggil(item){
 
+//   speechSynthesis.cancel()
+
+//   const textSuara =
+
+//     `Nomor antrian
+//     ${item.nomor_antrian},
+//     silahkan menuju
+//     ${item.loket}`
+
+//   const suara =
+//     new SpeechSynthesisUtterance(
+//       textSuara
+//     )
+
+//   suara.lang = "id-ID"
+
+//   suara.rate = 0.9
+
+//   suara.pitch = 1
+
+//   suara.volume = 1
+
+//   speechSynthesis.speak(suara)
+// }
+
+async function panggil(item){
+
+  const totalPanggilan =
+    (item.jumlah_panggilan || 0) + 1
+
+  // ===================
+  // SUDAH 3 KALI
+  // ===================
+  if(totalPanggilan > 3){
+
+    await supabase
+
+      .from("antrians")
+
+      .update({
+
+        jumlah_panggilan:
+          totalPanggilan,
+
+        status:
+          "dibatalkan"
+
+      })
+
+      .eq("id", item.id)
+
+    alert(
+      `Antrian ${item.nomor_antrian}
+dibatalkan karena tidak hadir
+setelah dipanggil 3 kali`
+    )
+
+    return
+  }
+
+  // ===================
+  // SIMPAN JUMLAH PANGGILAN
+  // ===================
+  await supabase
+
+    .from("antrians")
+
+    .update({
+
+      jumlah_panggilan:
+        totalPanggilan
+
+    })
+
+    .eq("id", item.id)
+
+  // ===================
+  // SUARA
+  // ===================
   speechSynthesis.cancel()
-
-  const textSuara =
-
-    `Nomor antrian
-    ${item.nomor_antrian},
-    silahkan menuju
-    ${item.loket}`
 
   const suara =
     new SpeechSynthesisUtterance(
-      textSuara
+
+      `Nomor antrian
+      ${item.nomor_antrian},
+      atas nama ${item.nama_pemohon}
+      silahkan menuju
+      ${item.loket}`
+
     )
 
   suara.lang = "id-ID"
@@ -264,60 +342,355 @@ export default function DashboardPetugas(){
   suara.volume = 1
 
   speechSynthesis.speak(suara)
+
+  alert(
+    `Panggilan ke-${totalPanggilan}`
+  )
 }
 
   // =========================
   // PROSES ANTRIAN
   // =========================
- async function prosesAntrian(item){
+//  async function prosesAntrian(item){
 
-  // jika diproses petugas lain
-  if(
+//   // jika diproses petugas lain
+//   if(
 
-    item.diproses_oleh
+//     item.diproses_oleh
 
-    &&
+//     &&
 
-    item.diproses_oleh
-    !== userData.id
+//     item.diproses_oleh
+//     !== userData.id
 
-  ){
+//   ){
 
-    alert(
-      "Antrian sedang diproses petugas lain"
-    )
+//     alert(
+//       "Antrian sedang diproses petugas lain"
+//     )
 
+//     return
+//   }
+
+//   const { error }
+//     = await supabase
+
+//     .from("antrians")
+
+//     // .update({
+
+//     //   status:"diproses",
+
+//     //   diproses_oleh:
+//     //     userData.id,
+
+//     //   waktu_mulai_proses:
+//     //     new Date().toISOString()
+
+//     // })
+
+//     .update({
+
+//   status:"diproses",
+
+//   diproses_oleh:
+//     userData.id,
+
+//   waktu_mulai_proses:
+//     new Date().toISOString(),
+
+//   jumlah_panggilan:0
+
+// })
+
+//     .eq("id", item.id)
+
+//     .eq(
+//       "status",
+//       "menunggu"
+//     )
+
+//   if(error){
+
+//     alert(error.message)
+
+//     return
+//   }
+
+//   getAntrians(userData.loket)
+// }
+// async function prosesAntrian(item){
+
+//   // kalau belum login
+//   if(!userData?.loket) return
+
+//   // 1. ambil antrian paling pertama (WAJIB URUT)
+//   const { data: firstQueue } = await supabase
+//     .from("antrians")
+//     .select("*")
+//     .eq("loket", userData.loket)
+//     .eq("status", "menunggu")
+//     .order("created_at", { ascending: true })
+//     .limit(1)
+//     .single()
+
+//   // 2. kalau bukan yang paling atas → STOP
+//   if(!firstQueue || firstQueue.id !== item.id){
+//     alert("⚠ Tidak boleh skip antrian! Harus urut dari atas.")
+//     return
+//   }
+
+//   // 3. cek kalau sudah diproses orang lain
+//   if(
+//     item.diproses_oleh &&
+//     item.diproses_oleh !== userData.id
+//   ){
+//     alert("Antrian sedang diproses petugas lain")
+//     return
+//   }
+
+//   // 4. update ke database
+//   const { error } = await supabase
+//     .from("antrians")
+//     .update({
+//       status: "diproses",
+//       diproses_oleh: userData.id,
+//       waktu_mulai_proses: new Date().toISOString(),
+//       jumlah_panggilan: 0
+//     })
+//     .eq("id", item.id)
+
+//   if(error){
+//     alert(error.message)
+//     return
+//   }
+
+//   // 5. refresh data
+//   getAntrians(userData.loket)
+// }
+// async function prosesAntrian(item){
+
+//   // 1. CEK DULU apakah sudah diambil orang lain
+//   const { data: cek } = await supabase
+//     .from("antrians")
+//     .select("id, diproses_oleh, status")
+//     .eq("id", item.id)
+//     .single()
+
+//   // kalau sudah ada yang ambil
+//   if(
+//     cek.diproses_oleh &&
+//     cek.diproses_oleh !== userData.id
+//   ){
+//     alert("❌ Antrian sudah diproses petugas lain")
+//     return
+//   }
+
+//   // 2. KUNCI ANTRIAN (LOCK)
+//   const { error } = await supabase
+//     .from("antrians")
+//     .update({
+//       status: "diproses",
+//       diproses_oleh: userData.id,
+//       waktu_mulai_proses: new Date().toISOString()
+//     })
+//     .eq("id", item.id)
+//     .eq("status", "menunggu")
+
+//   if(error){
+//     alert("Gagal mengambil antrian")
+//     return
+//   }
+
+//   // 3. REFRESH DATA
+//   getAntrians(userData.loket)
+// }
+
+// async function prosesAntrian(item){
+
+//   // 1. ambil data user login
+//   if(!userData?.id) return
+
+//   // 2. CEK apakah antrian sudah diambil orang lain
+//   const { data: latest } = await supabase
+//     .from("antrians")
+//     .select("id, diproses_oleh, status")
+//     .eq("id", item.id)
+//     .single()
+
+//   if(
+//     latest.diproses_oleh &&
+//     latest.diproses_oleh !== userData.id
+//   ){
+//     alert("❌ Antrian sudah diproses petugas lain")
+//     return
+//   }
+
+//   // 3. OPTIONAL RULE: 1 petugas hanya boleh 1 antrian aktif
+//   const { data: active } = await supabase
+//     .from("antrians")
+//     .select("id")
+//     .eq("diproses_oleh", userData.id)
+//     .eq("status", "diproses")
+
+//   if(active && active.length > 0){
+//     alert("❌ Kamu masih memproses antrian lain")
+//     return
+//   }
+
+//   // 4. LOCK ANTRIAN
+//   const { error } = await supabase
+//     .from("antrians")
+//     .update({
+//       status: "diproses",
+//       diproses_oleh: userData.id,
+//       waktu_mulai_proses: new Date().toISOString()
+//     })
+//     .eq("id", item.id)
+//     .eq("status", "menunggu")
+
+//   if(error){
+//     alert("Gagal proses antrian")
+//     return
+//   }
+
+//   getAntrians(userData.loket)
+// }
+
+// async function prosesAntrian(item){
+
+//   if(!userData?.loket) return
+
+//   // 1. AMBIL ANTRIAN PALING ATAS (WAJIB FIFO)
+//   const { data: firstQueue } = await supabase
+//     .from("antrians")
+//     .select("*")
+//     .eq("loket", userData.loket)
+//     .eq("status", "menunggu")
+//     .order("created_at", { ascending: true })
+//     .limit(1)
+//     .single()
+
+//   // 2. CEK APAKAH YANG DIKLIK ITU PALING ATAS
+//   if(!firstQueue || firstQueue.id !== item.id){
+//     alert("❌ Tidak boleh skip antrian! Harus urutan paling atas.")
+//     return
+//   }
+
+//   // 3. CEK DOUBLE PROSES (ANTI REBUTAN)
+//   if(
+//     item.diproses_oleh &&
+//     item.diproses_oleh !== userData.id
+//   ){
+//     alert("❌ Sudah diproses petugas lain")
+//     return
+//   }
+
+//   // 4. LOCK ANTRIAN
+//   const { error } = await supabase
+//     .from("antrians")
+//     .update({
+//       status: "diproses",
+//       diproses_oleh: userData.id,
+//       waktu_mulai_proses: new Date().toISOString()
+//     })
+//     .eq("id", item.id)
+//     .eq("status", "menunggu")
+
+//   if(error){
+//     alert("Gagal proses")
+//     return
+//   }
+
+//   getAntrians(userData.loket)
+// }
+// async function prosesAntrian(item){
+
+//   // 🔥 CEK: apakah petugas masih punya antrian aktif
+//   const { data: aktif } = await supabase
+//     .from("antrians")
+//     .select("id")
+//     .eq("diproses_oleh", userData.id)
+//     .eq("status", "diproses")
+
+//   if(aktif && aktif.length > 0){
+//     alert("Selesaikan antrian yang sedang diproses dulu")
+//     return
+//   }
+
+//   // lanjut proses
+//   const { error } = await supabase
+//     .from("antrians")
+//     .update({
+//       status: "diproses",
+//       diproses_oleh: userData.id,
+//       waktu_mulai_proses: new Date().toISOString()
+//     })
+//     .eq("id", item.id)
+//     .eq("status", "menunggu")
+
+//   if(error){
+//     alert(error.message)
+//     return
+//   }
+
+//   getAntrians(userData.loket)
+// }
+async function prosesAntrian(item){
+
+  // =========================
+  // 1. CEK: PETUGAS SUDAH PUNYA ANTRIAN AKTIF (ANTI DOUBLE)
+  // =========================
+  const { data: aktif } = await supabase
+    .from("antrians")
+    .select("id")
+    .eq("diproses_oleh", userData.id)
+    .eq("status", "diproses")
+
+  if(aktif && aktif.length > 0){
+    alert("Selesaikan antrian yang sedang diproses dulu")
     return
   }
 
-  const { error }
-    = await supabase
-
+  // =========================
+  // 2. CEK FIFO (ANTI SKIP)
+  // =========================
+  const { data: first } = await supabase
     .from("antrians")
+    .select("id, nomor_antrian")
+    .eq("loket", userData.loket)
+    .eq("status", "menunggu")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .single()
 
+  if(!first){
+    alert("Tidak ada antrian")
+    return
+  }
+
+  // kalau yang diklik bukan yang paling atas → BLOCK
+  if(first.id !== item.id){
+    alert(`Tidak boleh skip antrian!
+Ambil yang paling atas dulu: ${first.nomor_antrian}`)
+    return
+  }
+
+  // =========================
+  // 3. PROSES ANTRIAN
+  // =========================
+  const { error } = await supabase
+    .from("antrians")
     .update({
-
-      status:"diproses",
-
-      diproses_oleh:
-        userData.id,
-
-      waktu_mulai_proses:
-        new Date().toISOString()
-
+      status: "diproses",
+      diproses_oleh: userData.id,
+      waktu_mulai_proses: new Date().toISOString()
     })
-
     .eq("id", item.id)
-
-    .eq(
-      "status",
-      "menunggu"
-    )
+    .eq("status", "menunggu")
 
   if(error){
-
     alert(error.message)
-
     return
   }
 
